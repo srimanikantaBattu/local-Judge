@@ -42,7 +42,7 @@ export class LeetCodeTreeDataProvider implements vscode.TreeDataProvider<LeetCod
                 // Use questionFrontendId as it corresponds to the ID displayed on LeetCode website
                 const id = p.questionFrontendId;
                 const label = id ? `${id}. ${p.title}` : p.title;
-                return new LeetCodeTreeItem(label, vscode.TreeItemCollapsibleState.None, 'problem', p);
+                return new LeetCodeTreeItem(label, vscode.TreeItemCollapsibleState.None, 'problem', p, true);
             }));
         }
 
@@ -104,7 +104,8 @@ export class LeetCodeTreeItem extends vscode.TreeItem {
         public readonly label: string,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
         public readonly contextValue: string,
-        public readonly problem?: QuestionSummary
+        public readonly problem?: QuestionSummary,
+        public readonly isAllView: boolean = false
     ) {
         super(label, collapsibleState);
         this.tooltip = this.label;
@@ -114,7 +115,21 @@ export class LeetCodeTreeItem extends vscode.TreeItem {
                 title: 'Show Problem',
                 arguments: [problem]
             };
-            this.iconPath = new vscode.ThemeIcon('file-code');
+            
+            if (this.isAllView) {
+                let iconColor: vscode.ThemeColor;
+                if (problem.difficulty === 'Easy') {
+                    iconColor = new vscode.ThemeColor('localjudge.difficulty.easy');
+                } else if (problem.difficulty === 'Medium') {
+                    iconColor = new vscode.ThemeColor('localjudge.difficulty.medium');
+                } else {
+                    iconColor = new vscode.ThemeColor('localjudge.difficulty.hard');
+                }
+                this.iconPath = new vscode.ThemeIcon('circle-filled', iconColor);
+                this.resourceUri = vscode.Uri.parse(`localjudge://problem/${problem.questionFrontendId}?difficulty=${problem.difficulty}`);
+            } else {
+                this.iconPath = new vscode.ThemeIcon('file-code');
+            }
         } else if (contextValue === 'difficulty' || contextValue === 'tag' || contextValue === 'all') {
             this.iconPath = new vscode.ThemeIcon('folder');
         } else if (contextValue === 'difficulty_group' || contextValue === 'tag_group') {

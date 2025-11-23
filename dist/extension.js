@@ -61,11 +61,11 @@ var require_eventemitter3 = __commonJS({
       if (--emitter._eventsCount === 0) emitter._events = new Events();
       else delete emitter._events[evt];
     }
-    function EventEmitter3() {
+    function EventEmitter4() {
       this._events = new Events();
       this._eventsCount = 0;
     }
-    EventEmitter3.prototype.eventNames = function eventNames() {
+    EventEmitter4.prototype.eventNames = function eventNames() {
       var names = [], events, name;
       if (this._eventsCount === 0) return names;
       for (name in events = this._events) {
@@ -76,7 +76,7 @@ var require_eventemitter3 = __commonJS({
       }
       return names;
     };
-    EventEmitter3.prototype.listeners = function listeners(event) {
+    EventEmitter4.prototype.listeners = function listeners(event) {
       var evt = prefix ? prefix + event : event, handlers = this._events[evt];
       if (!handlers) return [];
       if (handlers.fn) return [handlers.fn];
@@ -85,13 +85,13 @@ var require_eventemitter3 = __commonJS({
       }
       return ee;
     };
-    EventEmitter3.prototype.listenerCount = function listenerCount(event) {
+    EventEmitter4.prototype.listenerCount = function listenerCount(event) {
       var evt = prefix ? prefix + event : event, listeners = this._events[evt];
       if (!listeners) return 0;
       if (listeners.fn) return 1;
       return listeners.length;
     };
-    EventEmitter3.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+    EventEmitter4.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
       var evt = prefix ? prefix + event : event;
       if (!this._events[evt]) return false;
       var listeners = this._events[evt], len = arguments.length, args, i;
@@ -142,13 +142,13 @@ var require_eventemitter3 = __commonJS({
       }
       return true;
     };
-    EventEmitter3.prototype.on = function on(event, fn, context) {
+    EventEmitter4.prototype.on = function on(event, fn, context) {
       return addListener(this, event, fn, context, false);
     };
-    EventEmitter3.prototype.once = function once(event, fn, context) {
+    EventEmitter4.prototype.once = function once(event, fn, context) {
       return addListener(this, event, fn, context, true);
     };
-    EventEmitter3.prototype.removeListener = function removeListener(event, fn, context, once) {
+    EventEmitter4.prototype.removeListener = function removeListener(event, fn, context, once) {
       var evt = prefix ? prefix + event : event;
       if (!this._events[evt]) return this;
       if (!fn) {
@@ -171,7 +171,7 @@ var require_eventemitter3 = __commonJS({
       }
       return this;
     };
-    EventEmitter3.prototype.removeAllListeners = function removeAllListeners(event) {
+    EventEmitter4.prototype.removeAllListeners = function removeAllListeners(event) {
       var evt;
       if (event) {
         evt = prefix ? prefix + event : event;
@@ -182,12 +182,12 @@ var require_eventemitter3 = __commonJS({
       }
       return this;
     };
-    EventEmitter3.prototype.off = EventEmitter3.prototype.removeListener;
-    EventEmitter3.prototype.addListener = EventEmitter3.prototype.on;
-    EventEmitter3.prefixed = prefix;
-    EventEmitter3.EventEmitter = EventEmitter3;
+    EventEmitter4.prototype.off = EventEmitter4.prototype.removeListener;
+    EventEmitter4.prototype.addListener = EventEmitter4.prototype.on;
+    EventEmitter4.prefixed = prefix;
+    EventEmitter4.EventEmitter = EventEmitter4;
     if ("undefined" !== typeof module2) {
-      module2.exports = EventEmitter3;
+      module2.exports = EventEmitter4;
     }
   }
 });
@@ -924,14 +924,14 @@ var require_url_state_machine = __commonJS({
       return url.replace(/\u0009|\u000A|\u000D/g, "");
     }
     function shortenPath(url) {
-      const path = url.path;
-      if (path.length === 0) {
+      const path2 = url.path;
+      if (path2.length === 0) {
         return;
       }
-      if (url.scheme === "file" && path.length === 1 && isNormalizedWindowsDriveLetter(path[0])) {
+      if (url.scheme === "file" && path2.length === 1 && isNormalizedWindowsDriveLetter(path2[0])) {
         return;
       }
-      path.pop();
+      path2.pop();
     }
     function includesCredentials(url) {
       return url.username !== "" || url.password !== "";
@@ -3228,7 +3228,9 @@ __export(extension_exports, {
   deactivate: () => deactivate
 });
 module.exports = __toCommonJS(extension_exports);
-var vscode2 = __toESM(require("vscode"));
+var vscode3 = __toESM(require("vscode"));
+var os = __toESM(require("os"));
+var path = __toESM(require("path"));
 
 // node_modules/eventemitter3/index.mjs
 var import_index = __toESM(require_eventemitter3(), 1);
@@ -3842,7 +3844,7 @@ var LeetCodeTreeDataProvider = class {
       return Promise.resolve(this.allProblems.map((p) => {
         const id = p.questionFrontendId;
         const label = id ? `${id}. ${p.title}` : p.title;
-        return new LeetCodeTreeItem(label, vscode.TreeItemCollapsibleState.None, "problem", p);
+        return new LeetCodeTreeItem(label, vscode.TreeItemCollapsibleState.None, "problem", p, true);
       }));
     }
     if (element.contextValue === "difficulty") {
@@ -3890,12 +3892,13 @@ var LeetCodeTreeDataProvider = class {
   }
 };
 var LeetCodeTreeItem = class extends vscode.TreeItem {
-  constructor(label, collapsibleState, contextValue, problem) {
+  constructor(label, collapsibleState, contextValue, problem, isAllView = false) {
     super(label, collapsibleState);
     this.label = label;
     this.collapsibleState = collapsibleState;
     this.contextValue = contextValue;
     this.problem = problem;
+    this.isAllView = isAllView;
     this.tooltip = this.label;
     if (contextValue === "problem" && problem) {
       this.command = {
@@ -3903,12 +3906,55 @@ var LeetCodeTreeItem = class extends vscode.TreeItem {
         title: "Show Problem",
         arguments: [problem]
       };
-      this.iconPath = new vscode.ThemeIcon("file-code");
+      if (this.isAllView) {
+        let iconColor;
+        if (problem.difficulty === "Easy") {
+          iconColor = new vscode.ThemeColor("localjudge.difficulty.easy");
+        } else if (problem.difficulty === "Medium") {
+          iconColor = new vscode.ThemeColor("localjudge.difficulty.medium");
+        } else {
+          iconColor = new vscode.ThemeColor("localjudge.difficulty.hard");
+        }
+        this.iconPath = new vscode.ThemeIcon("circle-filled", iconColor);
+        this.resourceUri = vscode.Uri.parse(`localjudge://problem/${problem.questionFrontendId}?difficulty=${problem.difficulty}`);
+      } else {
+        this.iconPath = new vscode.ThemeIcon("file-code");
+      }
     } else if (contextValue === "difficulty" || contextValue === "tag" || contextValue === "all") {
       this.iconPath = new vscode.ThemeIcon("folder");
     } else if (contextValue === "difficulty_group" || contextValue === "tag_group") {
       this.iconPath = new vscode.ThemeIcon("folder-opened");
     }
+  }
+};
+
+// src/providers/decorationProvider.ts
+var vscode2 = __toESM(require("vscode"));
+var LeetCodeDecorationProvider = class {
+  _onDidChangeFileDecorations = new vscode2.EventEmitter();
+  onDidChangeFileDecorations = this._onDidChangeFileDecorations.event;
+  provideFileDecoration(uri) {
+    if (uri.scheme === "localjudge" && uri.query) {
+      const params = new URLSearchParams(uri.query);
+      const difficulty = params.get("difficulty");
+      if (difficulty === "Easy") {
+        return {
+          badge: "E",
+          tooltip: "Easy"
+        };
+      } else if (difficulty === "Medium") {
+        return {
+          badge: "M",
+          tooltip: "Medium"
+        };
+      } else if (difficulty === "Hard") {
+        return {
+          badge: "H",
+          tooltip: "Hard"
+        };
+      }
+    }
+    return void 0;
   }
 };
 
@@ -4040,6 +4086,12 @@ function getHtmlForWebview(webview, problem) {
             ${problem.topicTags.map((tag) => `<span class="tag">${tag.name}</span>`).join("")}
         </div>` : ""}
 
+        ${problem.sampleTestCase ? `
+        <div class="section">
+            <h3>Sample Test Case</h3>
+            <pre><code>${problem.sampleTestCase}</code></pre>
+        </div>` : ""}
+
         ${similarQuestions.length > 0 ? `
         <div class="section">
             <h3>Similar Questions</h3>
@@ -4073,15 +4125,17 @@ function getHtmlForWebview(webview, problem) {
 // src/extension.ts
 function activate(context) {
   console.log('Congratulations, your extension "localjudge" is now active!');
-  const disposable = vscode2.commands.registerCommand("localjudge.helloWorld", () => {
-    vscode2.window.showInformationMessage("Hello World from LocalJudge!");
+  const disposable = vscode3.commands.registerCommand("localjudge.helloWorld", () => {
+    vscode3.window.showInformationMessage("Hello World from LocalJudge!");
   });
   const leetCodeService = new LeetCodeService();
   const treeDataProvider = new LeetCodeTreeDataProvider(leetCodeService);
+  const decorationProvider = new LeetCodeDecorationProvider();
   context.subscriptions.push(
-    vscode2.window.registerTreeDataProvider("localjudge.problems", treeDataProvider)
+    vscode3.window.registerTreeDataProvider("localjudge.problems", treeDataProvider),
+    vscode3.window.registerFileDecorationProvider(decorationProvider)
   );
-  const showProblemDisposable = vscode2.commands.registerCommand("localjudge.showProblem", async (problem) => {
+  const showProblemDisposable = vscode3.commands.registerCommand("localjudge.showProblem", async (problem) => {
     if (problem) {
       const p = problem.problem || problem;
       let slug = p.titleSlug || p.title_slug;
@@ -4091,10 +4145,10 @@ function activate(context) {
       slug = slug || "unknown";
       try {
         const details = await leetCodeService.getProblem(slug);
-        const panel = vscode2.window.createWebviewPanel(
+        const panel = vscode3.window.createWebviewPanel(
           "localjudgeProblem",
           `${details.title}: Preview`,
-          vscode2.ViewColumn.One,
+          vscode3.ViewColumn.One,
           {
             enableScripts: true,
             localResourceRoots: [context.extensionUri]
@@ -4105,10 +4159,10 @@ function activate(context) {
           (message) => {
             switch (message.type) {
               case "codeNow":
-                vscode2.commands.executeCommand("localjudge.codeNow", details);
+                vscode3.commands.executeCommand("localjudge.codeNow", details);
                 return;
               case "openProblem":
-                vscode2.commands.executeCommand("localjudge.showProblem", { titleSlug: message.slug });
+                vscode3.commands.executeCommand("localjudge.showProblem", { titleSlug: message.slug });
                 return;
             }
           },
@@ -4116,28 +4170,28 @@ function activate(context) {
           context.subscriptions
         );
       } catch (error) {
-        vscode2.window.showErrorMessage(`Failed to load problem '${slug}': ${error}`);
+        vscode3.window.showErrorMessage(`Failed to load problem '${slug}': ${error}`);
       }
     }
   });
-  const openGitHubDisposable = vscode2.commands.registerCommand("localjudge.openGitHub", () => {
-    vscode2.env.openExternal(vscode2.Uri.parse("https://github.com/srimanikantaBattu"));
+  const openGitHubDisposable = vscode3.commands.registerCommand("localjudge.openGitHub", () => {
+    vscode3.env.openExternal(vscode3.Uri.parse("https://github.com/srimanikantaBattu"));
   });
-  const refreshProblemsDisposable = vscode2.commands.registerCommand("localjudge.refreshProblems", () => {
+  const refreshProblemsDisposable = vscode3.commands.registerCommand("localjudge.refreshProblems", () => {
     treeDataProvider.refresh();
   });
-  const dailyChallengeDisposable = vscode2.commands.registerCommand("localjudge.getDailyChallenge", async () => {
+  const dailyChallengeDisposable = vscode3.commands.registerCommand("localjudge.getDailyChallenge", async () => {
     try {
-      vscode2.window.showInformationMessage("Fetching daily challenge...");
+      vscode3.window.showInformationMessage("Fetching daily challenge...");
       const daily = await leetCodeService.getDailyChallenge();
       const question = daily.question;
-      await vscode2.commands.executeCommand("localjudge.showProblem", question);
+      await vscode3.commands.executeCommand("localjudge.showProblem", question);
     } catch (error) {
-      vscode2.window.showErrorMessage(`Failed to get daily challenge: ${error}`);
+      vscode3.window.showErrorMessage(`Failed to get daily challenge: ${error}`);
     }
   });
-  const searchProblemDisposable = vscode2.commands.registerCommand("localjudge.searchProblem", async () => {
-    const query = await vscode2.window.showInputBox({
+  const searchProblemDisposable = vscode3.commands.registerCommand("localjudge.searchProblem", async () => {
+    const query = await vscode3.window.showInputBox({
       placeHolder: "Search for a LeetCode problem..."
     });
     if (query) {
@@ -4148,102 +4202,97 @@ function activate(context) {
           description: p.difficulty,
           detail: p.titleSlug
         }));
-        const selected = await vscode2.window.showQuickPick(items, {
+        const selected = await vscode3.window.showQuickPick(items, {
           placeHolder: "Select a problem to view"
         });
         if (selected && selected.detail) {
-          await vscode2.commands.executeCommand("localjudge.showProblem", { titleSlug: selected.detail });
+          await vscode3.commands.executeCommand("localjudge.showProblem", { titleSlug: selected.detail });
         }
       } catch (error) {
-        vscode2.window.showErrorMessage(`Failed to search problems: ${error}`);
+        vscode3.window.showErrorMessage(`Failed to search problems: ${error}`);
       }
     }
   });
-  const codeNowDisposable = vscode2.commands.registerCommand("localjudge.codeNow", async (problem) => {
+  const codeNowDisposable = vscode3.commands.registerCommand("localjudge.codeNow", async (problem) => {
     if (!problem) {
-      vscode2.window.showErrorMessage("No problem selected.");
+      vscode3.window.showErrorMessage("No problem selected.");
       return;
     }
-    const languages = ["Python", "JavaScript", "Java", "C++", "Go"];
-    const selectedLanguage = await vscode2.window.showQuickPick(languages, {
+    if (!problem.codeSnippets || problem.codeSnippets.length === 0) {
+      vscode3.window.showErrorMessage("No code snippets available for this problem.");
+      return;
+    }
+    const items = problem.codeSnippets.map((snippet) => ({
+      label: snippet.lang,
+      description: snippet.langSlug,
+      detail: snippet.code
+    }));
+    const selectedLanguage = await vscode3.window.showQuickPick(items, {
       placeHolder: "Select a language to solve the problem"
     });
     if (selectedLanguage) {
+      const snippet = problem.codeSnippets.find((s) => s.lang === selectedLanguage.label);
+      if (!snippet) {
+        return;
+      }
       let extension = "";
-      let content = "";
+      const langSlug = snippet.langSlug;
+      const langExtensions = {
+        "cpp": "cpp",
+        "java": "java",
+        "python": "py",
+        "python3": "py",
+        "c": "c",
+        "csharp": "cs",
+        "javascript": "js",
+        "ruby": "rb",
+        "swift": "swift",
+        "golang": "go",
+        "scala": "scala",
+        "kotlin": "kt",
+        "rust": "rs",
+        "php": "php",
+        "typescript": "ts",
+        "racket": "rkt",
+        "erlang": "erl",
+        "elixir": "ex",
+        "dart": "dart"
+      };
+      extension = langExtensions[langSlug] || "txt";
       const slug = problem.titleSlug || problem.title || "unknown";
       const safeSlug = slug.replace(/-/g, "_");
-      switch (selectedLanguage) {
-        case "Python":
-          extension = "py";
-          content = `# ${problem.questionFrontendId}. ${problem.title}
-# ${problem.url || ""}
+      const commentStyle = ["python", "python3", "ruby", "elixir"].includes(langSlug) ? "#" : "//";
+      const header = `${commentStyle} ${problem.questionFrontendId}. ${problem.title}
+${commentStyle} https://leetcode.com/problems/${problem.titleSlug}/
 
-class Solution:
-    def ${safeSlug}(self):
-        pass`;
-          break;
-        case "JavaScript":
-          extension = "js";
-          content = `// ${problem.questionFrontendId}. ${problem.title}
-// ${problem.url || ""}
+`;
+      let content = header + snippet.code;
+      if (problem.sampleTestCase) {
+        content += `
 
-/**
- * @param {any} args
- * @return {any}
- */
-var ${safeSlug} = function(args) {
-    
-};`;
-          break;
-        case "Java":
-          extension = "java";
-          content = `// ${problem.questionFrontendId}. ${problem.title}
-// ${problem.url || ""}
-
-class Solution {
-    public void ${safeSlug}() {
-        
-    }
-}`;
-          break;
-        case "C++":
-          extension = "cpp";
-          content = `// ${problem.questionFrontendId}. ${problem.title}
-// ${problem.url || ""}
-
-class Solution {
-public:
-    void ${safeSlug}() {
-        
-    }
-};`;
-          break;
-        case "Go":
-          extension = "go";
-          content = `// ${problem.questionFrontendId}. ${problem.title}
-// ${problem.url || ""}
-
-package main
-
-func ${safeSlug}() {
-    
-}`;
-          break;
+${commentStyle} Sample Test Case:
+`;
+        const testCaseLines = problem.sampleTestCase.split("\n");
+        testCaseLines.forEach((line) => {
+          content += `${commentStyle} ${line}
+`;
+        });
       }
       const fileName = `${safeSlug}.${extension}`;
       let uri;
-      if (vscode2.workspace.workspaceFolders && vscode2.workspace.workspaceFolders.length > 0) {
-        const root = vscode2.workspace.workspaceFolders[0].uri;
-        uri = vscode2.Uri.joinPath(root, fileName).with({ scheme: "untitled" });
+      if (vscode3.workspace.workspaceFolders && vscode3.workspace.workspaceFolders.length > 0) {
+        const root = vscode3.workspace.workspaceFolders[0].uri;
+        uri = vscode3.Uri.joinPath(root, fileName).with({ scheme: "untitled" });
       } else {
-        uri = vscode2.Uri.parse(`untitled:${fileName}`);
+        const homeDir = os.homedir();
+        const filePath = path.join(homeDir, fileName);
+        uri = vscode3.Uri.file(filePath).with({ scheme: "untitled" });
       }
-      const document = await vscode2.workspace.openTextDocument(uri);
-      const edit = new vscode2.WorkspaceEdit();
-      edit.insert(uri, new vscode2.Position(0, 0), content);
-      await vscode2.workspace.applyEdit(edit);
-      await vscode2.window.showTextDocument(document, vscode2.ViewColumn.One);
+      const document = await vscode3.workspace.openTextDocument(uri);
+      const edit = new vscode3.WorkspaceEdit();
+      edit.insert(uri, new vscode3.Position(0, 0), content);
+      await vscode3.workspace.applyEdit(edit);
+      await vscode3.window.showTextDocument(document, vscode3.ViewColumn.One);
     }
   });
   context.subscriptions.push(disposable);

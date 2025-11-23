@@ -1,8 +1,11 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as os from 'os';
+import * as path from 'path';
 import { LeetCodeService } from './services/leetcodeService';
 import { LeetCodeTreeDataProvider } from './providers/leetCodeTreeProvider';
+import { LeetCodeDecorationProvider } from './providers/decorationProvider';
 import { getHtmlForWebview } from './utils/webviewUtils';
 
 // This method is called when your extension is activated
@@ -24,9 +27,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const leetCodeService = new LeetCodeService();
 	const treeDataProvider = new LeetCodeTreeDataProvider(leetCodeService);
+    const decorationProvider = new LeetCodeDecorationProvider();
 
 	context.subscriptions.push(
-		vscode.window.registerTreeDataProvider('localjudge.problems', treeDataProvider)
+		vscode.window.registerTreeDataProvider('localjudge.problems', treeDataProvider),
+        vscode.window.registerFileDecorationProvider(decorationProvider)
 	);
 
 	const showProblemDisposable = vscode.commands.registerCommand('localjudge.showProblem', async (problem: any) => {
@@ -137,39 +142,69 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		const languages = ['Python', 'JavaScript', 'Java', 'C++', 'Go'];
-		const selectedLanguage = await vscode.window.showQuickPick(languages, {
+        if (!problem.codeSnippets || problem.codeSnippets.length === 0) {
+            vscode.window.showErrorMessage('No code snippets available for this problem.');
+            return;
+        }
+
+        const items: vscode.QuickPickItem[] = problem.codeSnippets.map((snippet: any) => ({
+            label: snippet.lang,
+            description: snippet.langSlug,
+            detail: snippet.code
+        }));
+
+		const selectedLanguage = await vscode.window.showQuickPick(items, {
 			placeHolder: 'Select a language to solve the problem'
 		});
 
 		if (selectedLanguage) {
+            const snippet = problem.codeSnippets.find((s: any) => s.lang === selectedLanguage.label);
+            if (!snippet) { return; }
+
 			let extension = '';
-			let content = '';
+            const langSlug = snippet.langSlug;
+            
+            const langExtensions: { [key: string]: string } = {
+                'cpp': 'cpp',
+                'java': 'java',
+                'python': 'py',
+                'python3': 'py',
+                'c': 'c',
+                'csharp': 'cs',
+                'javascript': 'js',
+                'ruby': 'rb',
+                'swift': 'swift',
+                'golang': 'go',
+                'scala': 'scala',
+                'kotlin': 'kt',
+                'rust': 'rs',
+                'php': 'php',
+                'typescript': 'ts',
+                'racket': 'rkt',
+                'erlang': 'erl',
+                'elixir': 'ex',
+                'dart': 'dart'
+            };
+
+            extension = langExtensions[langSlug] || 'txt';
+
 			const slug = problem.titleSlug || problem.title || 'unknown';
 			const safeSlug = slug.replace(/-/g, '_');
+            
+            // Add comment header
+            const commentStyle = ['python', 'python3', 'ruby', 'elixir'].includes(langSlug) ? '#' : '//';
+            const header = `${commentStyle} ${problem.questionFrontendId}. ${problem.title}\n${commentStyle} https://leetcode.com/problems/${problem.titleSlug}/\n\n`;
+            
+            let content = header + snippet.code;
 
-			switch (selectedLanguage) {
-				case 'Python':
-					extension = 'py';
-					content = `# ${problem.questionFrontendId}. ${problem.title}\n# ${problem.url || ''}\n\nclass Solution:\n    def ${safeSlug}(self):\n        pass`;
-					break;
-				case 'JavaScript':
-					extension = 'js';
-					content = `// ${problem.questionFrontendId}. ${problem.title}\n// ${problem.url || ''}\n\n/**\n * @param {any} args\n * @return {any}\n */\nvar ${safeSlug} = function(args) {\n    \n};`;
-					break;
-				case 'Java':
-					extension = 'java';
-					content = `// ${problem.questionFrontendId}. ${problem.title}\n// ${problem.url || ''}\n\nclass Solution {\n    public void ${safeSlug}() {\n        \n    }\n}`;
-					break;
-				case 'C++':
-					extension = 'cpp';
-					content = `// ${problem.questionFrontendId}. ${problem.title}\n// ${problem.url || ''}\n\nclass Solution {\npublic:\n    void ${safeSlug}() {\n        \n    }\n};`;
-					break;
-				case 'Go':
-					extension = 'go';
-					content = `// ${problem.questionFrontendId}. ${problem.title}\n// ${problem.url || ''}\n\npackage main\n\nfunc ${safeSlug}() {\n    \n}`;
-					break;
-			}
+            // Append Sample Test Case
+            if (problem.sampleTestCase) {
+                content += `\n\n${commentStyle} Sample Test Case:\n`;
+                const testCaseLines = problem.sampleTestCase.split('\n');
+                testCaseLines.forEach((line: string) => {
+                    content += `${commentStyle} ${line}\n`;
+                });
+            }
 
 			const fileName = `${safeSlug}.${extension}`;
 			let uri: vscode.Uri;
@@ -178,7 +213,10 @@ export function activate(context: vscode.ExtensionContext) {
 				const root = vscode.workspace.workspaceFolders[0].uri;
 				uri = vscode.Uri.joinPath(root, fileName).with({ scheme: 'untitled' });
 			} else {
-				uri = vscode.Uri.parse(`untitled:${fileName}`);
+				// Fallback to user's home directory to avoid permission issues with root drive
+				const homeDir = os.homedir();
+				const filePath = path.join(homeDir, fileName);
+				uri = vscode.Uri.file(filePath).with({ scheme: 'untitled' });
 			}
 
 			const document = await vscode.workspace.openTextDocument(uri);

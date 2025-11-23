@@ -128,6 +128,12 @@ export function getHtmlForWebview(webview: vscode.Webview, problem?: Problem): s
             ${problem.topicTags.map(tag => `<span class="tag">${tag.name}</span>`).join('')}
         </div>` : ''}
 
+        ${problem.sampleTestCase ? `
+        <div class="section">
+            <h3>Sample Test Case</h3>
+            <pre><code>${problem.sampleTestCase}</code></pre>
+        </div>` : ''}
+
         ${similarQuestions.length > 0 ? `
         <div class="section">
             <h3>Similar Questions</h3>

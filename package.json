@@ -77,7 +77,36 @@
           "group": "navigation"
         }
       ]
-    }
+    },
+    "colors": [
+      {
+        "id": "localjudge.difficulty.easy",
+        "description": "Color for Easy difficulty problems",
+        "defaults": {
+          "dark": "#00B8A3",
+          "light": "#00B8A3",
+          "highContrast": "#00B8A3"
+        }
+      },
+      {
+        "id": "localjudge.difficulty.medium",
+        "description": "Color for Medium difficulty problems",
+        "defaults": {
+          "dark": "#FFC01E",
+          "light": "#FFC01E",
+          "highContrast": "#FFC01E"
+        }
+      },
+      {
+        "id": "localjudge.difficulty.hard",
+        "description": "Color for Hard difficulty problems",
+        "defaults": {
+          "dark": "#FF375F",
+          "light": "#FF375F",
+          "highContrast": "#FF375F"
+        }
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
