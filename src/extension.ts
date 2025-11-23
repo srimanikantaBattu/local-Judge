@@ -5,6 +5,8 @@ import * as os from 'os';
 import * as path from 'path';
 import { LeetCodeService } from './services/leetcodeService';
 import { LeetCodeTreeDataProvider } from './providers/leetCodeTreeProvider';
+import { UserProfileProvider } from './providers/userProfileProvider';
+import { WelcomeProvider } from './providers/welcomeProvider';
 import { LeetCodeDecorationProvider } from './providers/decorationProvider';
 import { getHtmlForWebview } from './utils/webviewUtils';
 
@@ -26,13 +28,105 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	const leetCodeService = new LeetCodeService();
+    const userProfileProvider = new UserProfileProvider(leetCodeService);
 	const treeDataProvider = new LeetCodeTreeDataProvider(leetCodeService);
     const decorationProvider = new LeetCodeDecorationProvider();
+    const welcomeProvider = new WelcomeProvider();
 
+    // Register providers immediately
 	context.subscriptions.push(
 		vscode.window.registerTreeDataProvider('localjudge.problems', treeDataProvider),
+        vscode.window.registerTreeDataProvider('localjudge.profile', userProfileProvider),
+        vscode.window.registerTreeDataProvider('localjudge.welcome', welcomeProvider),
         vscode.window.registerFileDecorationProvider(decorationProvider)
 	);
+
+	// Initialize authentication
+	const secretStorage = context.secrets;
+    const updateContext = (isLoggedIn: boolean) => {
+        vscode.commands.executeCommand('setContext', 'localjudge:isLoggedIn', isLoggedIn);
+    };
+    updateContext(false);
+
+	secretStorage.get('leetcode-session').then(async (sessionCookie) => {
+		if (sessionCookie) {
+			try {
+				await leetCodeService.initialize(sessionCookie);
+                updateContext(true);
+                userProfileProvider.refresh();
+				console.log('Auto-login successful');
+			} catch (e) {
+				console.error('Auto-login failed', e);
+				vscode.window.showWarningMessage('LocalJudge: Auto-login failed. Please sign in again.');
+			}
+		}
+	});
+
+	const signInDisposable = vscode.commands.registerCommand('localjudge.signIn', async () => {
+        // Direct login is not supported due to CAPTCHA. We must use the session cookie.
+        const selection = await vscode.window.showQuickPick(
+            [
+                { label: 'I have my cookie', description: 'Paste LEETCODE_SESSION cookie directly' },
+                { label: 'Open LeetCode to get cookie', description: 'Open browser to login and copy cookie' }
+            ],
+            { placeHolder: 'Select sign in method' }
+        );
+
+        if (!selection) {
+            return;
+        }
+
+        if (selection.label === 'Open LeetCode to get cookie') {
+            const action = await vscode.window.showInformationMessage(
+                '1. Log in to LeetCode in your browser.\n' +
+                '2. Open Developer Tools (F12) -> Application -> Cookies.\n' +
+                '3. Copy the value of "LEETCODE_SESSION".',
+                { modal: true },
+                'Open Browser'
+            );
+            
+            if (action === 'Open Browser') {
+                await vscode.env.openExternal(vscode.Uri.parse('https://leetcode.com/accounts/login/'));
+            } else {
+                return;
+            }
+        }
+
+		const cookie = await vscode.window.showInputBox({
+			prompt: 'Enter your LeetCode Session Cookie (LEETCODE_SESSION)',
+			password: true,
+			ignoreFocusOut: true,
+			placeHolder: 'Paste your session cookie here...'
+		});
+
+		if (cookie) {
+			try {
+				await leetCodeService.initialize(cookie);
+				await secretStorage.store('leetcode-session', cookie);
+                updateContext(true);
+                userProfileProvider.refresh();
+				vscode.window.showInformationMessage('Successfully signed in to LeetCode!');
+				treeDataProvider.refresh();
+			} catch (error) {
+				vscode.window.showErrorMessage(`Sign in failed: ${error}`);
+			}
+		}
+	});
+
+	const signOutDisposable = vscode.commands.registerCommand('localjudge.signOut', async () => {
+		try {
+			leetCodeService.logout();
+			await secretStorage.delete('leetcode-session');
+            updateContext(false);
+            userProfileProvider.refresh();
+			vscode.window.showInformationMessage('Signed out from LeetCode.');
+			treeDataProvider.refresh();
+		} catch (error) {
+			vscode.window.showErrorMessage(`Sign out failed: ${error}`);
+		}
+	});
+
+	context.subscriptions.push(signInDisposable, signOutDisposable);
 
 	const showProblemDisposable = vscode.commands.registerCommand('localjudge.showProblem', async (problem: any) => {
 		// This command can be triggered from tree view or other places

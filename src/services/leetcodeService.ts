@@ -103,10 +103,50 @@ export interface DailyChallenge {
     question: Problem;
 }
 
-import { LeetCode } from 'leetcode-query';
+import { LeetCode, Credential, UserProfile, Whoami } from 'leetcode-query';
 
 export class LeetCodeService {
-    private leetcode = new LeetCode();
+    private leetcode: LeetCode;
+    private credential?: Credential;
+
+    constructor() {
+        this.leetcode = new LeetCode();
+    }
+
+    async initialize(sessionCookie: string): Promise<void> {
+        try {
+            // Clear any existing cache to ensure we fetch fresh data with user status
+            if (this.leetcode && this.leetcode.cache) {
+                this.leetcode.cache.clear();
+            }
+
+            this.credential = new Credential();
+            await this.credential.init(sessionCookie);
+            this.leetcode = new LeetCode(this.credential);
+            
+            // Verify the session by fetching user info
+            const user = await this.leetcode.whoami();
+            if (!user.isSignedIn) {
+                throw new Error('Session cookie is invalid or expired.');
+            }
+        } catch (error) {
+            console.error('Failed to initialize credential:', error);
+            throw error;
+        }
+    }
+
+    logout(): void {
+        this.credential = undefined;
+        this.leetcode = new LeetCode();
+    }
+
+    async getWhoAmI(): Promise<Whoami> {
+        return await this.leetcode.whoami();
+    }
+
+    async getUserProfile(username: string): Promise<UserProfile> {
+        return await this.leetcode.user(username);
+    }
 
     async getDailyChallenge(): Promise<DailyChallenge> {
         try {

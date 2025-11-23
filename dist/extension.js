@@ -61,11 +61,11 @@ var require_eventemitter3 = __commonJS({
       if (--emitter._eventsCount === 0) emitter._events = new Events();
       else delete emitter._events[evt];
     }
-    function EventEmitter4() {
+    function EventEmitter5() {
       this._events = new Events();
       this._eventsCount = 0;
     }
-    EventEmitter4.prototype.eventNames = function eventNames() {
+    EventEmitter5.prototype.eventNames = function eventNames() {
       var names = [], events, name;
       if (this._eventsCount === 0) return names;
       for (name in events = this._events) {
@@ -76,7 +76,7 @@ var require_eventemitter3 = __commonJS({
       }
       return names;
     };
-    EventEmitter4.prototype.listeners = function listeners(event) {
+    EventEmitter5.prototype.listeners = function listeners(event) {
       var evt = prefix ? prefix + event : event, handlers = this._events[evt];
       if (!handlers) return [];
       if (handlers.fn) return [handlers.fn];
@@ -85,13 +85,13 @@ var require_eventemitter3 = __commonJS({
       }
       return ee;
     };
-    EventEmitter4.prototype.listenerCount = function listenerCount(event) {
+    EventEmitter5.prototype.listenerCount = function listenerCount(event) {
       var evt = prefix ? prefix + event : event, listeners = this._events[evt];
       if (!listeners) return 0;
       if (listeners.fn) return 1;
       return listeners.length;
     };
-    EventEmitter4.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+    EventEmitter5.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
       var evt = prefix ? prefix + event : event;
       if (!this._events[evt]) return false;
       var listeners = this._events[evt], len = arguments.length, args, i;
@@ -142,13 +142,13 @@ var require_eventemitter3 = __commonJS({
       }
       return true;
     };
-    EventEmitter4.prototype.on = function on(event, fn, context) {
+    EventEmitter5.prototype.on = function on(event, fn, context) {
       return addListener(this, event, fn, context, false);
     };
-    EventEmitter4.prototype.once = function once(event, fn, context) {
+    EventEmitter5.prototype.once = function once(event, fn, context) {
       return addListener(this, event, fn, context, true);
     };
-    EventEmitter4.prototype.removeListener = function removeListener(event, fn, context, once) {
+    EventEmitter5.prototype.removeListener = function removeListener(event, fn, context, once) {
       var evt = prefix ? prefix + event : event;
       if (!this._events[evt]) return this;
       if (!fn) {
@@ -171,7 +171,7 @@ var require_eventemitter3 = __commonJS({
       }
       return this;
     };
-    EventEmitter4.prototype.removeAllListeners = function removeAllListeners(event) {
+    EventEmitter5.prototype.removeAllListeners = function removeAllListeners(event) {
       var evt;
       if (event) {
         evt = prefix ? prefix + event : event;
@@ -182,12 +182,12 @@ var require_eventemitter3 = __commonJS({
       }
       return this;
     };
-    EventEmitter4.prototype.off = EventEmitter4.prototype.removeListener;
-    EventEmitter4.prototype.addListener = EventEmitter4.prototype.on;
-    EventEmitter4.prefixed = prefix;
-    EventEmitter4.EventEmitter = EventEmitter4;
+    EventEmitter5.prototype.off = EventEmitter5.prototype.removeListener;
+    EventEmitter5.prototype.addListener = EventEmitter5.prototype.on;
+    EventEmitter5.prefixed = prefix;
+    EventEmitter5.EventEmitter = EventEmitter5;
     if ("undefined" !== typeof module2) {
-      module2.exports = EventEmitter4;
+      module2.exports = EventEmitter5;
     }
   }
 });
@@ -3228,7 +3228,7 @@ __export(extension_exports, {
   deactivate: () => deactivate
 });
 module.exports = __toCommonJS(extension_exports);
-var vscode3 = __toESM(require("vscode"));
+var vscode4 = __toESM(require("vscode"));
 var os = __toESM(require("os"));
 var path = __toESM(require("path"));
 
@@ -3769,7 +3769,38 @@ var leetcode_default = LeetCode;
 
 // src/services/leetcodeService.ts
 var LeetCodeService = class {
-  leetcode = new leetcode_default();
+  leetcode;
+  credential;
+  constructor() {
+    this.leetcode = new leetcode_default();
+  }
+  async initialize(sessionCookie) {
+    try {
+      if (this.leetcode && this.leetcode.cache) {
+        this.leetcode.cache.clear();
+      }
+      this.credential = new Credential();
+      await this.credential.init(sessionCookie);
+      this.leetcode = new leetcode_default(this.credential);
+      const user = await this.leetcode.whoami();
+      if (!user.isSignedIn) {
+        throw new Error("Session cookie is invalid or expired.");
+      }
+    } catch (error) {
+      console.error("Failed to initialize credential:", error);
+      throw error;
+    }
+  }
+  logout() {
+    this.credential = void 0;
+    this.leetcode = new leetcode_default();
+  }
+  async getWhoAmI() {
+    return await this.leetcode.whoami();
+  }
+  async getUserProfile(username) {
+    return await this.leetcode.user(username);
+  }
   async getDailyChallenge() {
     try {
       const daily = await this.leetcode.daily();
@@ -3906,20 +3937,16 @@ var LeetCodeTreeItem = class extends vscode.TreeItem {
         title: "Show Problem",
         arguments: [problem]
       };
-      if (this.isAllView) {
-        let iconColor;
-        if (problem.difficulty === "Easy") {
-          iconColor = new vscode.ThemeColor("localjudge.difficulty.easy");
-        } else if (problem.difficulty === "Medium") {
-          iconColor = new vscode.ThemeColor("localjudge.difficulty.medium");
-        } else {
-          iconColor = new vscode.ThemeColor("localjudge.difficulty.hard");
-        }
-        this.iconPath = new vscode.ThemeIcon("circle-filled", iconColor);
-        this.resourceUri = vscode.Uri.parse(`localjudge://problem/${problem.questionFrontendId}?difficulty=${problem.difficulty}`);
+      let iconColor;
+      if (problem.difficulty === "Easy") {
+        iconColor = new vscode.ThemeColor("localjudge.difficulty.easy");
+      } else if (problem.difficulty === "Medium") {
+        iconColor = new vscode.ThemeColor("localjudge.difficulty.medium");
       } else {
-        this.iconPath = new vscode.ThemeIcon("file-code");
+        iconColor = new vscode.ThemeColor("localjudge.difficulty.hard");
       }
+      this.iconPath = new vscode.ThemeIcon("circle-filled", iconColor);
+      this.resourceUri = vscode.Uri.parse(`localjudge://problem/${problem.questionFrontendId}?difficulty=${problem.difficulty}&status=${problem.status || ""}`);
     } else if (contextValue === "difficulty" || contextValue === "tag" || contextValue === "all") {
       this.iconPath = new vscode.ThemeIcon("folder");
     } else if (contextValue === "difficulty_group" || contextValue === "tag_group") {
@@ -3928,15 +3955,109 @@ var LeetCodeTreeItem = class extends vscode.TreeItem {
   }
 };
 
-// src/providers/decorationProvider.ts
+// src/providers/userProfileProvider.ts
 var vscode2 = __toESM(require("vscode"));
+var UserProfileProvider = class {
+  constructor(leetCodeService) {
+    this.leetCodeService = leetCodeService;
+  }
+  _onDidChangeTreeData = new vscode2.EventEmitter();
+  onDidChangeTreeData = this._onDidChangeTreeData.event;
+  userProfile = null;
+  whoami = null;
+  refresh() {
+    this.userProfile = null;
+    this.whoami = null;
+    this._onDidChangeTreeData.fire();
+  }
+  getTreeItem(element) {
+    return element;
+  }
+  async getChildren(element) {
+    if (!element) {
+      try {
+        if (!this.whoami) {
+          this.whoami = await this.leetCodeService.getWhoAmI();
+        }
+        if (!this.whoami.isSignedIn) {
+          return [new vscode2.TreeItem("Not Signed In")];
+        }
+        if (!this.userProfile) {
+          this.userProfile = await this.leetCodeService.getUserProfile(this.whoami.username);
+        }
+        const items = [];
+        const userItem = new vscode2.TreeItem(this.whoami.username, vscode2.TreeItemCollapsibleState.None);
+        userItem.description = `Rank: ${this.userProfile.matchedUser?.profile.ranking.toLocaleString()}`;
+        userItem.iconPath = new vscode2.ThemeIcon("account");
+        items.push(userItem);
+        const submitStats = this.userProfile.matchedUser?.submitStats.acSubmissionNum;
+        if (submitStats) {
+          const total = submitStats.find((s) => s.difficulty === "All")?.count || 0;
+          const easy = submitStats.find((s) => s.difficulty === "Easy")?.count || 0;
+          const medium = submitStats.find((s) => s.difficulty === "Medium")?.count || 0;
+          const hard = submitStats.find((s) => s.difficulty === "Hard")?.count || 0;
+          const solvedItem = new vscode2.TreeItem(`Solved: ${total}`, vscode2.TreeItemCollapsibleState.Expanded);
+          solvedItem.iconPath = new vscode2.ThemeIcon("check");
+          items.push(solvedItem);
+          return items;
+        }
+        return items;
+      } catch (error) {
+        vscode2.window.showErrorMessage(`Failed to load profile: ${error}`);
+        return [new vscode2.TreeItem("Error loading profile")];
+      }
+    } else if (element.label?.toString().startsWith("Solved:")) {
+      if (this.userProfile) {
+        const submitStats = this.userProfile.matchedUser?.submitStats.acSubmissionNum;
+        if (submitStats) {
+          const easy = submitStats.find((s) => s.difficulty === "Easy")?.count || 0;
+          const medium = submitStats.find((s) => s.difficulty === "Medium")?.count || 0;
+          const hard = submitStats.find((s) => s.difficulty === "Hard")?.count || 0;
+          const easyItem = new vscode2.TreeItem(`Easy: ${easy}`, vscode2.TreeItemCollapsibleState.None);
+          easyItem.iconPath = new vscode2.ThemeIcon("circle-filled", new vscode2.ThemeColor("localjudge.difficulty.easy"));
+          const mediumItem = new vscode2.TreeItem(`Medium: ${medium}`, vscode2.TreeItemCollapsibleState.None);
+          mediumItem.iconPath = new vscode2.ThemeIcon("circle-filled", new vscode2.ThemeColor("localjudge.difficulty.medium"));
+          const hardItem = new vscode2.TreeItem(`Hard: ${hard}`, vscode2.TreeItemCollapsibleState.None);
+          hardItem.iconPath = new vscode2.ThemeIcon("circle-filled", new vscode2.ThemeColor("localjudge.difficulty.hard"));
+          return [easyItem, mediumItem, hardItem];
+        }
+      }
+    }
+    return [];
+  }
+};
+
+// src/providers/welcomeProvider.ts
+var WelcomeProvider = class {
+  getTreeItem(element) {
+    return element;
+  }
+  getChildren(element) {
+    return [];
+  }
+};
+
+// src/providers/decorationProvider.ts
+var vscode3 = __toESM(require("vscode"));
 var LeetCodeDecorationProvider = class {
-  _onDidChangeFileDecorations = new vscode2.EventEmitter();
+  _onDidChangeFileDecorations = new vscode3.EventEmitter();
   onDidChangeFileDecorations = this._onDidChangeFileDecorations.event;
   provideFileDecoration(uri) {
     if (uri.scheme === "localjudge" && uri.query) {
       const params = new URLSearchParams(uri.query);
       const difficulty = params.get("difficulty");
+      const status = params.get("status");
+      if (status === "ac") {
+        return {
+          badge: "\u2714",
+          tooltip: "Accepted"
+        };
+      } else if (status === "notac") {
+        return {
+          badge: "?",
+          tooltip: "Attempted"
+        };
+      }
       if (difficulty === "Easy") {
         return {
           badge: "E",
@@ -4125,17 +4246,94 @@ function getHtmlForWebview(webview, problem) {
 // src/extension.ts
 function activate(context) {
   console.log('Congratulations, your extension "localjudge" is now active!');
-  const disposable = vscode3.commands.registerCommand("localjudge.helloWorld", () => {
-    vscode3.window.showInformationMessage("Hello World from LocalJudge!");
+  const disposable = vscode4.commands.registerCommand("localjudge.helloWorld", () => {
+    vscode4.window.showInformationMessage("Hello World from LocalJudge!");
   });
   const leetCodeService = new LeetCodeService();
+  const userProfileProvider = new UserProfileProvider(leetCodeService);
   const treeDataProvider = new LeetCodeTreeDataProvider(leetCodeService);
   const decorationProvider = new LeetCodeDecorationProvider();
+  const welcomeProvider = new WelcomeProvider();
   context.subscriptions.push(
-    vscode3.window.registerTreeDataProvider("localjudge.problems", treeDataProvider),
-    vscode3.window.registerFileDecorationProvider(decorationProvider)
+    vscode4.window.registerTreeDataProvider("localjudge.problems", treeDataProvider),
+    vscode4.window.registerTreeDataProvider("localjudge.profile", userProfileProvider),
+    vscode4.window.registerTreeDataProvider("localjudge.welcome", welcomeProvider),
+    vscode4.window.registerFileDecorationProvider(decorationProvider)
   );
-  const showProblemDisposable = vscode3.commands.registerCommand("localjudge.showProblem", async (problem) => {
+  const secretStorage = context.secrets;
+  const updateContext = (isLoggedIn) => {
+    vscode4.commands.executeCommand("setContext", "localjudge:isLoggedIn", isLoggedIn);
+  };
+  updateContext(false);
+  secretStorage.get("leetcode-session").then(async (sessionCookie) => {
+    if (sessionCookie) {
+      try {
+        await leetCodeService.initialize(sessionCookie);
+        updateContext(true);
+        userProfileProvider.refresh();
+        console.log("Auto-login successful");
+      } catch (e) {
+        console.error("Auto-login failed", e);
+        vscode4.window.showWarningMessage("LocalJudge: Auto-login failed. Please sign in again.");
+      }
+    }
+  });
+  const signInDisposable = vscode4.commands.registerCommand("localjudge.signIn", async () => {
+    const selection = await vscode4.window.showQuickPick(
+      [
+        { label: "I have my cookie", description: "Paste LEETCODE_SESSION cookie directly" },
+        { label: "Open LeetCode to get cookie", description: "Open browser to login and copy cookie" }
+      ],
+      { placeHolder: "Select sign in method" }
+    );
+    if (!selection) {
+      return;
+    }
+    if (selection.label === "Open LeetCode to get cookie") {
+      const action = await vscode4.window.showInformationMessage(
+        '1. Log in to LeetCode in your browser.\n2. Open Developer Tools (F12) -> Application -> Cookies.\n3. Copy the value of "LEETCODE_SESSION".',
+        { modal: true },
+        "Open Browser"
+      );
+      if (action === "Open Browser") {
+        await vscode4.env.openExternal(vscode4.Uri.parse("https://leetcode.com/accounts/login/"));
+      } else {
+        return;
+      }
+    }
+    const cookie = await vscode4.window.showInputBox({
+      prompt: "Enter your LeetCode Session Cookie (LEETCODE_SESSION)",
+      password: true,
+      ignoreFocusOut: true,
+      placeHolder: "Paste your session cookie here..."
+    });
+    if (cookie) {
+      try {
+        await leetCodeService.initialize(cookie);
+        await secretStorage.store("leetcode-session", cookie);
+        updateContext(true);
+        userProfileProvider.refresh();
+        vscode4.window.showInformationMessage("Successfully signed in to LeetCode!");
+        treeDataProvider.refresh();
+      } catch (error) {
+        vscode4.window.showErrorMessage(`Sign in failed: ${error}`);
+      }
+    }
+  });
+  const signOutDisposable = vscode4.commands.registerCommand("localjudge.signOut", async () => {
+    try {
+      leetCodeService.logout();
+      await secretStorage.delete("leetcode-session");
+      updateContext(false);
+      userProfileProvider.refresh();
+      vscode4.window.showInformationMessage("Signed out from LeetCode.");
+      treeDataProvider.refresh();
+    } catch (error) {
+      vscode4.window.showErrorMessage(`Sign out failed: ${error}`);
+    }
+  });
+  context.subscriptions.push(signInDisposable, signOutDisposable);
+  const showProblemDisposable = vscode4.commands.registerCommand("localjudge.showProblem", async (problem) => {
     if (problem) {
       const p = problem.problem || problem;
       let slug = p.titleSlug || p.title_slug;
@@ -4145,10 +4343,10 @@ function activate(context) {
       slug = slug || "unknown";
       try {
         const details = await leetCodeService.getProblem(slug);
-        const panel = vscode3.window.createWebviewPanel(
+        const panel = vscode4.window.createWebviewPanel(
           "localjudgeProblem",
           `${details.title}: Preview`,
-          vscode3.ViewColumn.One,
+          vscode4.ViewColumn.One,
           {
             enableScripts: true,
             localResourceRoots: [context.extensionUri]
@@ -4159,10 +4357,10 @@ function activate(context) {
           (message) => {
             switch (message.type) {
               case "codeNow":
-                vscode3.commands.executeCommand("localjudge.codeNow", details);
+                vscode4.commands.executeCommand("localjudge.codeNow", details);
                 return;
               case "openProblem":
-                vscode3.commands.executeCommand("localjudge.showProblem", { titleSlug: message.slug });
+                vscode4.commands.executeCommand("localjudge.showProblem", { titleSlug: message.slug });
                 return;
             }
           },
@@ -4170,28 +4368,28 @@ function activate(context) {
           context.subscriptions
         );
       } catch (error) {
-        vscode3.window.showErrorMessage(`Failed to load problem '${slug}': ${error}`);
+        vscode4.window.showErrorMessage(`Failed to load problem '${slug}': ${error}`);
       }
     }
   });
-  const openGitHubDisposable = vscode3.commands.registerCommand("localjudge.openGitHub", () => {
-    vscode3.env.openExternal(vscode3.Uri.parse("https://github.com/srimanikantaBattu"));
+  const openGitHubDisposable = vscode4.commands.registerCommand("localjudge.openGitHub", () => {
+    vscode4.env.openExternal(vscode4.Uri.parse("https://github.com/srimanikantaBattu"));
   });
-  const refreshProblemsDisposable = vscode3.commands.registerCommand("localjudge.refreshProblems", () => {
+  const refreshProblemsDisposable = vscode4.commands.registerCommand("localjudge.refreshProblems", () => {
     treeDataProvider.refresh();
   });
-  const dailyChallengeDisposable = vscode3.commands.registerCommand("localjudge.getDailyChallenge", async () => {
+  const dailyChallengeDisposable = vscode4.commands.registerCommand("localjudge.getDailyChallenge", async () => {
     try {
-      vscode3.window.showInformationMessage("Fetching daily challenge...");
+      vscode4.window.showInformationMessage("Fetching daily challenge...");
       const daily = await leetCodeService.getDailyChallenge();
       const question = daily.question;
-      await vscode3.commands.executeCommand("localjudge.showProblem", question);
+      await vscode4.commands.executeCommand("localjudge.showProblem", question);
     } catch (error) {
-      vscode3.window.showErrorMessage(`Failed to get daily challenge: ${error}`);
+      vscode4.window.showErrorMessage(`Failed to get daily challenge: ${error}`);
     }
   });
-  const searchProblemDisposable = vscode3.commands.registerCommand("localjudge.searchProblem", async () => {
-    const query = await vscode3.window.showInputBox({
+  const searchProblemDisposable = vscode4.commands.registerCommand("localjudge.searchProblem", async () => {
+    const query = await vscode4.window.showInputBox({
       placeHolder: "Search for a LeetCode problem..."
     });
     if (query) {
@@ -4202,24 +4400,24 @@ function activate(context) {
           description: p.difficulty,
           detail: p.titleSlug
         }));
-        const selected = await vscode3.window.showQuickPick(items, {
+        const selected = await vscode4.window.showQuickPick(items, {
           placeHolder: "Select a problem to view"
         });
         if (selected && selected.detail) {
-          await vscode3.commands.executeCommand("localjudge.showProblem", { titleSlug: selected.detail });
+          await vscode4.commands.executeCommand("localjudge.showProblem", { titleSlug: selected.detail });
         }
       } catch (error) {
-        vscode3.window.showErrorMessage(`Failed to search problems: ${error}`);
+        vscode4.window.showErrorMessage(`Failed to search problems: ${error}`);
       }
     }
   });
-  const codeNowDisposable = vscode3.commands.registerCommand("localjudge.codeNow", async (problem) => {
+  const codeNowDisposable = vscode4.commands.registerCommand("localjudge.codeNow", async (problem) => {
     if (!problem) {
-      vscode3.window.showErrorMessage("No problem selected.");
+      vscode4.window.showErrorMessage("No problem selected.");
       return;
     }
     if (!problem.codeSnippets || problem.codeSnippets.length === 0) {
-      vscode3.window.showErrorMessage("No code snippets available for this problem.");
+      vscode4.window.showErrorMessage("No code snippets available for this problem.");
       return;
     }
     const items = problem.codeSnippets.map((snippet) => ({
@@ -4227,7 +4425,7 @@ function activate(context) {
       description: snippet.langSlug,
       detail: snippet.code
     }));
-    const selectedLanguage = await vscode3.window.showQuickPick(items, {
+    const selectedLanguage = await vscode4.window.showQuickPick(items, {
       placeHolder: "Select a language to solve the problem"
     });
     if (selectedLanguage) {
@@ -4280,19 +4478,19 @@ ${commentStyle} Sample Test Case:
       }
       const fileName = `${safeSlug}.${extension}`;
       let uri;
-      if (vscode3.workspace.workspaceFolders && vscode3.workspace.workspaceFolders.length > 0) {
-        const root = vscode3.workspace.workspaceFolders[0].uri;
-        uri = vscode3.Uri.joinPath(root, fileName).with({ scheme: "untitled" });
+      if (vscode4.workspace.workspaceFolders && vscode4.workspace.workspaceFolders.length > 0) {
+        const root = vscode4.workspace.workspaceFolders[0].uri;
+        uri = vscode4.Uri.joinPath(root, fileName).with({ scheme: "untitled" });
       } else {
         const homeDir = os.homedir();
         const filePath = path.join(homeDir, fileName);
-        uri = vscode3.Uri.file(filePath).with({ scheme: "untitled" });
+        uri = vscode4.Uri.file(filePath).with({ scheme: "untitled" });
       }
-      const document = await vscode3.workspace.openTextDocument(uri);
-      const edit = new vscode3.WorkspaceEdit();
-      edit.insert(uri, new vscode3.Position(0, 0), content);
-      await vscode3.workspace.applyEdit(edit);
-      await vscode3.window.showTextDocument(document, vscode3.ViewColumn.One);
+      const document = await vscode4.workspace.openTextDocument(uri);
+      const edit = new vscode4.WorkspaceEdit();
+      edit.insert(uri, new vscode4.Position(0, 0), content);
+      await vscode4.workspace.applyEdit(edit);
+      await vscode4.window.showTextDocument(document, vscode4.ViewColumn.One);
     }
   });
   context.subscriptions.push(disposable);

@@ -8,6 +8,19 @@ export class LeetCodeDecorationProvider implements vscode.FileDecorationProvider
         if (uri.scheme === 'localjudge' && uri.query) {
             const params = new URLSearchParams(uri.query);
             const difficulty = params.get('difficulty');
+            const status = params.get('status');
+
+            if (status === 'ac') {
+                return {
+                    badge: '✔',
+                    tooltip: 'Accepted'
+                };
+            } else if (status === 'notac') {
+                return {
+                    badge: '?',
+                    tooltip: 'Attempted'
+                };
+            }
 
             if (difficulty === 'Easy') {
                 return {

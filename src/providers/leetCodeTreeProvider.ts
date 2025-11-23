@@ -116,20 +116,18 @@ export class LeetCodeTreeItem extends vscode.TreeItem {
                 arguments: [problem]
             };
             
-            if (this.isAllView) {
-                let iconColor: vscode.ThemeColor;
-                if (problem.difficulty === 'Easy') {
-                    iconColor = new vscode.ThemeColor('localjudge.difficulty.easy');
-                } else if (problem.difficulty === 'Medium') {
-                    iconColor = new vscode.ThemeColor('localjudge.difficulty.medium');
-                } else {
-                    iconColor = new vscode.ThemeColor('localjudge.difficulty.hard');
-                }
-                this.iconPath = new vscode.ThemeIcon('circle-filled', iconColor);
-                this.resourceUri = vscode.Uri.parse(`localjudge://problem/${problem.questionFrontendId}?difficulty=${problem.difficulty}`);
+            // Icon always shows difficulty color
+            let iconColor: vscode.ThemeColor;
+            if (problem.difficulty === 'Easy') {
+                iconColor = new vscode.ThemeColor('localjudge.difficulty.easy');
+            } else if (problem.difficulty === 'Medium') {
+                iconColor = new vscode.ThemeColor('localjudge.difficulty.medium');
             } else {
-                this.iconPath = new vscode.ThemeIcon('file-code');
+                iconColor = new vscode.ThemeColor('localjudge.difficulty.hard');
             }
+            this.iconPath = new vscode.ThemeIcon('circle-filled', iconColor);
+            
+            this.resourceUri = vscode.Uri.parse(`localjudge://problem/${problem.questionFrontendId}?difficulty=${problem.difficulty}&status=${problem.status || ''}`);
         } else if (contextValue === 'difficulty' || contextValue === 'tag' || contextValue === 'all') {
             this.iconPath = new vscode.ThemeIcon('folder');
         } else if (contextValue === 'difficulty_group' || contextValue === 'tag_group') {

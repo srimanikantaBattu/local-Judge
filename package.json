@@ -25,11 +25,30 @@
       "localjudge-sidebar": [
         {
           "type": "tree",
+          "id": "localjudge.welcome",
+          "name": "WELCOME",
+          "when": "!localjudge:isLoggedIn"
+        },
+        {
+          "type": "tree",
           "id": "localjudge.problems",
-          "name": "PROBLEMS"
+          "name": "PROBLEMS",
+          "when": "localjudge:isLoggedIn"
+        },
+        {
+          "type": "tree",
+          "id": "localjudge.profile",
+          "name": "PROFILE",
+          "when": "localjudge:isLoggedIn"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "localjudge.welcome",
+        "contents": "Sign in to LeetCode to access problems and your profile.\n[Sign In](command:localjudge.signIn)"
+      }
+    ],
     "commands": [
       {
         "command": "localjudge.helloWorld",
@@ -57,6 +76,18 @@
         "title": "Refresh Problems",
         "category": "LocalJudge",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "localjudge.signIn",
+        "title": "Sign In",
+        "category": "LocalJudge",
+        "icon": "$(sign-in)"
+      },
+      {
+        "command": "localjudge.signOut",
+        "title": "Sign Out",
+        "category": "LocalJudge",
+        "icon": "$(sign-out)"
       }
     ],
     "menus": {
@@ -74,6 +105,16 @@
         {
           "command": "localjudge.searchProblem",
           "when": "view == localjudge.problems",
+          "group": "navigation"
+        },
+        {
+          "command": "localjudge.signIn",
+          "when": "view == localjudge.problems && !localjudge:isLoggedIn",
+          "group": "navigation"
+        },
+        {
+          "command": "localjudge.signOut",
+          "when": "view == localjudge.problems && localjudge:isLoggedIn",
           "group": "navigation"
         }
       ]
