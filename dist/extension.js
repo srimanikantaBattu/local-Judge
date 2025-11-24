@@ -61,11 +61,11 @@ var require_eventemitter3 = __commonJS({
       if (--emitter._eventsCount === 0) emitter._events = new Events();
       else delete emitter._events[evt];
     }
-    function EventEmitter5() {
+    function EventEmitter6() {
       this._events = new Events();
       this._eventsCount = 0;
     }
-    EventEmitter5.prototype.eventNames = function eventNames() {
+    EventEmitter6.prototype.eventNames = function eventNames() {
       var names = [], events, name;
       if (this._eventsCount === 0) return names;
       for (name in events = this._events) {
@@ -76,7 +76,7 @@ var require_eventemitter3 = __commonJS({
       }
       return names;
     };
-    EventEmitter5.prototype.listeners = function listeners(event) {
+    EventEmitter6.prototype.listeners = function listeners(event) {
       var evt = prefix ? prefix + event : event, handlers = this._events[evt];
       if (!handlers) return [];
       if (handlers.fn) return [handlers.fn];
@@ -85,13 +85,13 @@ var require_eventemitter3 = __commonJS({
       }
       return ee;
     };
-    EventEmitter5.prototype.listenerCount = function listenerCount(event) {
+    EventEmitter6.prototype.listenerCount = function listenerCount(event) {
       var evt = prefix ? prefix + event : event, listeners = this._events[evt];
       if (!listeners) return 0;
       if (listeners.fn) return 1;
       return listeners.length;
     };
-    EventEmitter5.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+    EventEmitter6.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
       var evt = prefix ? prefix + event : event;
       if (!this._events[evt]) return false;
       var listeners = this._events[evt], len = arguments.length, args, i;
@@ -142,13 +142,13 @@ var require_eventemitter3 = __commonJS({
       }
       return true;
     };
-    EventEmitter5.prototype.on = function on(event, fn, context) {
+    EventEmitter6.prototype.on = function on(event, fn, context) {
       return addListener(this, event, fn, context, false);
     };
-    EventEmitter5.prototype.once = function once(event, fn, context) {
+    EventEmitter6.prototype.once = function once(event, fn, context) {
       return addListener(this, event, fn, context, true);
     };
-    EventEmitter5.prototype.removeListener = function removeListener(event, fn, context, once) {
+    EventEmitter6.prototype.removeListener = function removeListener(event, fn, context, once) {
       var evt = prefix ? prefix + event : event;
       if (!this._events[evt]) return this;
       if (!fn) {
@@ -171,7 +171,7 @@ var require_eventemitter3 = __commonJS({
       }
       return this;
     };
-    EventEmitter5.prototype.removeAllListeners = function removeAllListeners(event) {
+    EventEmitter6.prototype.removeAllListeners = function removeAllListeners(event) {
       var evt;
       if (event) {
         evt = prefix ? prefix + event : event;
@@ -182,12 +182,12 @@ var require_eventemitter3 = __commonJS({
       }
       return this;
     };
-    EventEmitter5.prototype.off = EventEmitter5.prototype.removeListener;
-    EventEmitter5.prototype.addListener = EventEmitter5.prototype.on;
-    EventEmitter5.prefixed = prefix;
-    EventEmitter5.EventEmitter = EventEmitter5;
+    EventEmitter6.prototype.off = EventEmitter6.prototype.removeListener;
+    EventEmitter6.prototype.addListener = EventEmitter6.prototype.on;
+    EventEmitter6.prefixed = prefix;
+    EventEmitter6.EventEmitter = EventEmitter6;
     if ("undefined" !== typeof module2) {
-      module2.exports = EventEmitter5;
+      module2.exports = EventEmitter6;
     }
   }
 });
@@ -2955,12 +2955,12 @@ var require_lib2 = __commonJS({
       const dest = new URL$1(destination).protocol;
       return orig === dest;
     };
-    function fetch(url, opts) {
-      if (!fetch.Promise) {
+    function fetch2(url, opts) {
+      if (!fetch2.Promise) {
         throw new Error("native promise missing, set fetch.Promise to your favorite alternative");
       }
-      Body.Promise = fetch.Promise;
-      return new fetch.Promise(function(resolve, reject) {
+      Body.Promise = fetch2.Promise;
+      return new fetch2.Promise(function(resolve, reject) {
         const request = new Request(url, opts);
         const options = getNodeRequestOptions(request);
         const send = (options.protocol === "https:" ? https : http).request;
@@ -3031,7 +3031,7 @@ var require_lib2 = __commonJS({
         req.on("response", function(res) {
           clearTimeout(reqTimeout);
           const headers = createHeadersLenient(res.headers);
-          if (fetch.isRedirect(res.statusCode)) {
+          if (fetch2.isRedirect(res.statusCode)) {
             const location = headers.get("Location");
             let locationURL = null;
             try {
@@ -3093,7 +3093,7 @@ var require_lib2 = __commonJS({
                   requestOpts.body = void 0;
                   requestOpts.headers.delete("content-length");
                 }
-                resolve(fetch(new Request(locationURL, requestOpts)));
+                resolve(fetch2(new Request(locationURL, requestOpts)));
                 finalize();
                 return;
             }
@@ -3185,11 +3185,11 @@ var require_lib2 = __commonJS({
         stream.end();
       }
     }
-    fetch.isRedirect = function(code) {
+    fetch2.isRedirect = function(code) {
       return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
     };
-    fetch.Promise = global.Promise;
-    module2.exports = exports2 = fetch;
+    fetch2.Promise = global.Promise;
+    module2.exports = exports2 = fetch2;
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.default = exports2;
     exports2.Headers = Headers;
@@ -3205,19 +3205,19 @@ var require_node_ponyfill = __commonJS({
   "node_modules/cross-fetch/dist/node-ponyfill.js"(exports2, module2) {
     var nodeFetch = require_lib2();
     var realFetch = nodeFetch.default || nodeFetch;
-    var fetch = function(url, options) {
+    var fetch2 = function(url, options) {
       if (/^\/\//.test(url)) {
         url = "https:" + url;
       }
       return realFetch.call(this, url, options);
     };
-    fetch.ponyfill = true;
-    module2.exports = exports2 = fetch;
-    exports2.fetch = fetch;
+    fetch2.ponyfill = true;
+    module2.exports = exports2 = fetch2;
+    exports2.fetch = fetch2;
     exports2.Headers = nodeFetch.Headers;
     exports2.Request = nodeFetch.Request;
     exports2.Response = nodeFetch.Response;
-    exports2.default = fetch;
+    exports2.default = fetch2;
   }
 });
 
@@ -3228,7 +3228,7 @@ __export(extension_exports, {
   deactivate: () => deactivate
 });
 module.exports = __toCommonJS(extension_exports);
-var vscode4 = __toESM(require("vscode"));
+var vscode5 = __toESM(require("vscode"));
 var os = __toESM(require("os"));
 var path = __toESM(require("path"));
 
@@ -3771,10 +3771,12 @@ var leetcode_default = LeetCode;
 var LeetCodeService = class {
   leetcode;
   credential;
+  sessionCookie = "";
   constructor() {
     this.leetcode = new leetcode_default();
   }
   async initialize(sessionCookie) {
+    this.sessionCookie = sessionCookie;
     try {
       if (this.leetcode && this.leetcode.cache) {
         this.leetcode.cache.clear();
@@ -3840,6 +3842,159 @@ var LeetCodeService = class {
       throw error;
     }
   }
+  async getCsrfToken() {
+    if (this.credential.csrfToken) {
+      return this.credential.csrfToken;
+    }
+    const match = this.sessionCookie.match(/csrftoken=([^;]+)/);
+    if (match) {
+      return match[1];
+    }
+    try {
+      let cookieHeader = this.sessionCookie;
+      if (!cookieHeader.includes("LEETCODE_SESSION=")) {
+        cookieHeader = `LEETCODE_SESSION=${this.sessionCookie}`;
+      }
+      const headers = {
+        "Content-Type": "application/json",
+        "Cookie": cookieHeader,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      };
+      let response = await fetch("https://leetcode.com/graphql", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ query: "{ user { username } }" })
+      });
+      let setCookie = response.headers.get("set-cookie");
+      if (setCookie) {
+        const tokenMatch = setCookie.match(/csrftoken=([^;]+)/);
+        if (tokenMatch) {
+          return tokenMatch[1];
+        }
+      }
+      response = await fetch("https://leetcode.com/", {
+        method: "GET",
+        headers
+      });
+      setCookie = response.headers.get("set-cookie");
+      if (setCookie) {
+        const tokenMatch = setCookie.match(/csrftoken=([^;]+)/);
+        if (tokenMatch) {
+          return tokenMatch[1];
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch CSRF token", e);
+    }
+    return void 0;
+  }
+  async runTest(slug, code, lang, input, questionId) {
+    if (!this.credential) {
+      throw new Error("Not signed in");
+    }
+    const csrfToken = await this.getCsrfToken();
+    if (!csrfToken) {
+      throw new Error("CSRF Token not found. Please ensure you pasted the full cookie string including csrftoken.");
+    }
+    let cookieHeader = this.sessionCookie;
+    if (!cookieHeader.includes("LEETCODE_SESSION=")) {
+      cookieHeader = `LEETCODE_SESSION=${this.sessionCookie}`;
+    }
+    if (!cookieHeader.includes("csrftoken=")) {
+      cookieHeader += `; csrftoken=${csrfToken}`;
+    }
+    const headers = {
+      "Content-Type": "application/json",
+      "Referer": `https://leetcode.com/problems/${slug}/`,
+      "Origin": "https://leetcode.com",
+      "Cookie": cookieHeader,
+      "x-csrftoken": csrfToken,
+      "X-Requested-With": "XMLHttpRequest",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    };
+    const body = JSON.stringify({
+      lang,
+      question_id: questionId,
+      typed_code: code,
+      data_input: input
+    });
+    try {
+      const response = await fetch(`https://leetcode.com/problems/${slug}/interpret_solution/`, {
+        method: "POST",
+        headers,
+        body,
+        redirect: "manual"
+      });
+      if (response.type === "opaqueredirect" || response.status === 302 || response.status === 301) {
+        throw new Error("Session expired or invalid. Please sign in again.");
+      }
+      if (!response.ok) {
+        const text2 = await response.text();
+        if (response.status === 403) {
+          throw new Error("Access Denied (403). CSRF token mismatch or Cloudflare block.");
+        }
+        throw new Error(`Request failed with status ${response.status}: ${text2.substring(0, 200)}...`);
+      }
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text2 = await response.text();
+        if (text2.includes("Just a moment...")) {
+          throw new Error("Blocked by Cloudflare. Please try again later or update your cookie.");
+        }
+        throw new Error(`Expected JSON response but got ${contentType}. Response start: ${text2.substring(0, 100)}...`);
+      }
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(`Invalid JSON response: ${text.substring(0, 200)}...`);
+      }
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      const interpretId = data.interpret_id;
+      if (!interpretId) {
+        throw new Error(`Failed to start test run: ${JSON.stringify(data)}`);
+      }
+      return await this.pollSubmission(interpretId, csrfToken);
+    } catch (error) {
+      console.error("Test run failed:", error);
+      throw error;
+    }
+  }
+  async pollSubmission(id, csrfToken) {
+    let attempts = 0;
+    while (attempts < 20) {
+      await new Promise((resolve) => setTimeout(resolve, 2e3));
+      const response = await fetch(`https://leetcode.com/submissions/detail/${id}/check/`, {
+        headers: {
+          "Cookie": this.sessionCookie,
+          "x-csrftoken": csrfToken,
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Referer": `https://leetcode.com/submissions/detail/${id}/check/`
+        }
+      });
+      if (!response.ok) {
+        console.warn(`Polling failed with status ${response.status}`);
+        attempts++;
+        continue;
+      }
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        attempts++;
+        continue;
+      }
+      if (data.state === "SUCCESS") {
+        return data;
+      }
+      attempts++;
+    }
+    throw new Error("Test run timed out");
+  }
 };
 
 // src/providers/leetCodeTreeProvider.ts
@@ -3847,7 +4002,6 @@ var vscode = __toESM(require("vscode"));
 var LeetCodeTreeDataProvider = class {
   constructor(leetCodeService) {
     this.leetCodeService = leetCodeService;
-    this.refresh();
   }
   _onDidChangeTreeData = new vscode.EventEmitter();
   onDidChangeTreeData = this._onDidChangeTreeData.event;
@@ -3986,27 +4140,67 @@ var UserProfileProvider = class {
           this.userProfile = await this.leetCodeService.getUserProfile(this.whoami.username);
         }
         const items = [];
-        const userItem = new vscode2.TreeItem(this.whoami.username, vscode2.TreeItemCollapsibleState.None);
-        userItem.description = `Rank: ${this.userProfile.matchedUser?.profile.ranking.toLocaleString()}`;
-        userItem.iconPath = new vscode2.ThemeIcon("account");
-        items.push(userItem);
+        const profile = this.userProfile.matchedUser?.profile;
+        if (profile) {
+          const userItem = new vscode2.TreeItem(this.whoami.username, vscode2.TreeItemCollapsibleState.None);
+          userItem.description = `Rank: ${profile.ranking.toLocaleString()}`;
+          userItem.iconPath = new vscode2.ThemeIcon("account");
+          items.push(userItem);
+          if (profile.realName) {
+            const nameItem = new vscode2.TreeItem(profile.realName, vscode2.TreeItemCollapsibleState.None);
+            nameItem.iconPath = new vscode2.ThemeIcon("symbol-string");
+            nameItem.description = "Name";
+            items.push(nameItem);
+          }
+          if (profile.countryName) {
+            const locItem = new vscode2.TreeItem(profile.countryName, vscode2.TreeItemCollapsibleState.None);
+            locItem.iconPath = new vscode2.ThemeIcon("location");
+            items.push(locItem);
+          }
+          if (profile.company) {
+            const companyItem = new vscode2.TreeItem(profile.company, vscode2.TreeItemCollapsibleState.None);
+            companyItem.iconPath = new vscode2.ThemeIcon("organization");
+            items.push(companyItem);
+          }
+          if (profile.school) {
+            const schoolItem = new vscode2.TreeItem(profile.school, vscode2.TreeItemCollapsibleState.None);
+            schoolItem.iconPath = new vscode2.ThemeIcon("mortar-board");
+            items.push(schoolItem);
+          }
+          if (profile.reputation) {
+            const repItem = new vscode2.TreeItem(`Reputation: ${profile.reputation}`, vscode2.TreeItemCollapsibleState.None);
+            repItem.iconPath = new vscode2.ThemeIcon("star");
+            items.push(repItem);
+          }
+        }
         const submitStats = this.userProfile.matchedUser?.submitStats.acSubmissionNum;
         if (submitStats) {
           const total = submitStats.find((s) => s.difficulty === "All")?.count || 0;
-          const easy = submitStats.find((s) => s.difficulty === "Easy")?.count || 0;
-          const medium = submitStats.find((s) => s.difficulty === "Medium")?.count || 0;
-          const hard = submitStats.find((s) => s.difficulty === "Hard")?.count || 0;
-          const solvedItem = new vscode2.TreeItem(`Solved: ${total}`, vscode2.TreeItemCollapsibleState.Expanded);
+          const solvedItem = new vscode2.TreeItem(`Solved: ${total}`, vscode2.TreeItemCollapsibleState.Collapsed);
           solvedItem.iconPath = new vscode2.ThemeIcon("check");
+          solvedItem.contextValue = "solved_stats";
           items.push(solvedItem);
-          return items;
+        }
+        if (profile) {
+          if (profile.skillTags && profile.skillTags.length > 0) {
+            const skillsItem = new vscode2.TreeItem("Skills", vscode2.TreeItemCollapsibleState.Collapsed);
+            skillsItem.iconPath = new vscode2.ThemeIcon("tools");
+            skillsItem.contextValue = "skills";
+            items.push(skillsItem);
+          }
+          if (profile.websites && profile.websites.length > 0) {
+            const webItem = new vscode2.TreeItem("Websites", vscode2.TreeItemCollapsibleState.Collapsed);
+            webItem.iconPath = new vscode2.ThemeIcon("globe");
+            webItem.contextValue = "websites";
+            items.push(webItem);
+          }
         }
         return items;
       } catch (error) {
         vscode2.window.showErrorMessage(`Failed to load profile: ${error}`);
         return [new vscode2.TreeItem("Error loading profile")];
       }
-    } else if (element.label?.toString().startsWith("Solved:")) {
+    } else if (element.contextValue === "solved_stats" || element.label?.toString().startsWith("Solved:")) {
       if (this.userProfile) {
         const submitStats = this.userProfile.matchedUser?.submitStats.acSubmissionNum;
         if (submitStats) {
@@ -4021,6 +4215,27 @@ var UserProfileProvider = class {
           hardItem.iconPath = new vscode2.ThemeIcon("circle-filled", new vscode2.ThemeColor("localjudge.difficulty.hard"));
           return [easyItem, mediumItem, hardItem];
         }
+      }
+    } else if (element.contextValue === "skills") {
+      if (this.userProfile && this.userProfile.matchedUser) {
+        return this.userProfile.matchedUser.profile.skillTags.map((skill) => {
+          const item = new vscode2.TreeItem(skill, vscode2.TreeItemCollapsibleState.None);
+          item.iconPath = new vscode2.ThemeIcon("tag");
+          return item;
+        });
+      }
+    } else if (element.contextValue === "websites") {
+      if (this.userProfile && this.userProfile.matchedUser) {
+        return this.userProfile.matchedUser.profile.websites.map((url) => {
+          const item = new vscode2.TreeItem(url, vscode2.TreeItemCollapsibleState.None);
+          item.iconPath = new vscode2.ThemeIcon("link");
+          item.command = {
+            command: "vscode.open",
+            title: "Open URL",
+            arguments: [vscode2.Uri.parse(url)]
+          };
+          return item;
+        });
       }
     }
     return [];
@@ -4047,12 +4262,12 @@ var LeetCodeDecorationProvider = class {
       const params = new URLSearchParams(uri.query);
       const difficulty = params.get("difficulty");
       const status = params.get("status");
-      if (status === "ac") {
+      if (status && status.toLowerCase() === "ac") {
         return {
           badge: "\u2714",
           tooltip: "Accepted"
         };
-      } else if (status === "notac") {
+      } else if (status && status.toLowerCase() === "notac") {
         return {
           badge: "?",
           tooltip: "Attempted"
@@ -4076,6 +4291,52 @@ var LeetCodeDecorationProvider = class {
       }
     }
     return void 0;
+  }
+};
+
+// src/providers/codeLensProvider.ts
+var vscode4 = __toESM(require("vscode"));
+var LeetCodeCodeLensProvider = class {
+  onDidChangeCodeLensesEmitter = new vscode4.EventEmitter();
+  get onDidChangeCodeLenses() {
+    return this.onDidChangeCodeLensesEmitter.event;
+  }
+  refresh() {
+    this.onDidChangeCodeLensesEmitter.fire();
+  }
+  provideCodeLenses(document) {
+    const text = document.getText();
+    const match = text.match(/(?:\/\/|#)\s+https:\/\/leetcode\.com\/problems\/([a-z0-9-]+)\//);
+    if (!match) {
+      return [];
+    }
+    const slug = match[1];
+    let line = 0;
+    const lines = text.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes("class Solution") || lines[i].includes("def ") || lines[i].includes("func ")) {
+        line = i;
+        break;
+      }
+    }
+    if (line === 0) {
+      line = 2;
+    }
+    const range = new vscode4.Range(line, 0, line, 0);
+    const testCmd = {
+      title: "$(beaker) Test",
+      command: "localjudge.test",
+      arguments: [slug, document.uri]
+    };
+    const submitCmd = {
+      title: "$(check) Submit",
+      command: "localjudge.submit",
+      arguments: [slug, document.uri]
+    };
+    return [
+      new vscode4.CodeLens(range, testCmd),
+      new vscode4.CodeLens(range, submitCmd)
+    ];
   }
 };
 
@@ -4242,27 +4503,125 @@ function getHtmlForWebview(webview, problem) {
     </body>
     </html>`;
 }
+function getTestResultHtml(result, input) {
+  const testCases = result.code_answer || [];
+  const expected = result.expected_code_answer || [];
+  const stdOutput = result.std_output || [];
+  let inputs = input.split("\n").filter((line) => line.trim() !== "");
+  let tabsHtml = "";
+  let contentHtml = "";
+  if (result.run_success) {
+    testCases.forEach((output, index) => {
+      const isCorrect = output === expected[index];
+      const statusColor = isCorrect ? "#00B8A3" : "#FF375F";
+      const statusIcon = isCorrect ? "\u2713" : "\u2717";
+      tabsHtml += `<button class="tab-button ${index === 0 ? "active" : ""}" onclick="openTab(event, 'case${index}')">Case ${index + 1} <span style="color: ${statusColor}">${statusIcon}</span></button>`;
+      contentHtml += `
+            <div id="case${index}" class="tab-content" style="display: ${index === 0 ? "block" : "none"}">
+                <div class="result-item">
+                    <span class="label">Input:</span>
+                    <pre>${inputs[index] || input}</pre>
+                </div>
+                <div class="result-item">
+                    <span class="label">Output:</span>
+                    <pre>${output}</pre>
+                </div>
+                <div class="result-item">
+                    <span class="label">Expected:</span>
+                    <pre>${expected[index]}</pre>
+                </div>
+                ${stdOutput[index] ? `
+                <div class="result-item">
+                    <span class="label">Stdout:</span>
+                    <pre>${stdOutput[index]}</pre>
+                </div>` : ""}
+            </div>`;
+    });
+  } else {
+    contentHtml = `
+        <div class="error-container">
+            <h3>${result.status_msg}</h3>
+            <pre>${result.full_compile_error || result.full_runtime_error || result.compile_error || result.runtime_error || "Unknown error"}</pre>
+        </div>`;
+  }
+  return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Test Results</title>
+        <style>
+            body { font-family: var(--vscode-font-family); color: var(--vscode-editor-foreground); padding: 20px; }
+            .tab-container { display: flex; border-bottom: 1px solid var(--vscode-panel-border); margin-bottom: 20px; }
+            .tab-button {
+                background: none;
+                border: none;
+                padding: 10px 20px;
+                cursor: pointer;
+                color: var(--vscode-foreground);
+                border-bottom: 2px solid transparent;
+                font-size: 1em;
+            }
+            .tab-button.active {
+                border-bottom-color: var(--vscode-panelTitle-activeBorder);
+                color: var(--vscode-panelTitle-activeForeground);
+            }
+            .tab-button:hover {
+                color: var(--vscode-panelTitle-activeForeground);
+            }
+            .result-item { margin-bottom: 20px; }
+            .label { font-weight: bold; display: block; margin-bottom: 5px; color: var(--vscode-descriptionForeground); }
+            pre { background-color: var(--vscode-textBlockQuote-background); padding: 10px; border-radius: 5px; overflow-x: auto; }
+            .error-container { color: var(--vscode-errorForeground); }
+        </style>
+    </head>
+    <body>
+        <h2>${result.status_msg}</h2>
+        ${result.run_success ? `<div class="tab-container">${tabsHtml}</div>` : ""}
+        ${contentHtml}
+        
+        <script>
+            function openTab(evt, caseName) {
+                var i, tabcontent, tablinks;
+                tabcontent = document.getElementsByClassName("tab-content");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
+                }
+                tablinks = document.getElementsByClassName("tab-button");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(" active", "");
+                }
+                document.getElementById(caseName).style.display = "block";
+                evt.currentTarget.className += " active";
+            }
+        </script>
+    </body>
+    </html>`;
+}
 
 // src/extension.ts
 function activate(context) {
   console.log('Congratulations, your extension "localjudge" is now active!');
-  const disposable = vscode4.commands.registerCommand("localjudge.helloWorld", () => {
-    vscode4.window.showInformationMessage("Hello World from LocalJudge!");
+  const disposable = vscode5.commands.registerCommand("localjudge.helloWorld", () => {
+    vscode5.window.showInformationMessage("Hello World from LocalJudge!");
   });
   const leetCodeService = new LeetCodeService();
   const userProfileProvider = new UserProfileProvider(leetCodeService);
   const treeDataProvider = new LeetCodeTreeDataProvider(leetCodeService);
   const decorationProvider = new LeetCodeDecorationProvider();
   const welcomeProvider = new WelcomeProvider();
+  const codeLensProvider = new LeetCodeCodeLensProvider();
   context.subscriptions.push(
-    vscode4.window.registerTreeDataProvider("localjudge.problems", treeDataProvider),
-    vscode4.window.registerTreeDataProvider("localjudge.profile", userProfileProvider),
-    vscode4.window.registerTreeDataProvider("localjudge.welcome", welcomeProvider),
-    vscode4.window.registerFileDecorationProvider(decorationProvider)
+    vscode5.window.registerTreeDataProvider("localjudge.problems", treeDataProvider),
+    vscode5.window.registerTreeDataProvider("localjudge.profile", userProfileProvider),
+    vscode5.window.registerTreeDataProvider("localjudge.welcome", welcomeProvider),
+    vscode5.window.registerFileDecorationProvider(decorationProvider),
+    vscode5.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider),
+    vscode5.languages.registerCodeLensProvider({ scheme: "untitled" }, codeLensProvider)
   );
   const secretStorage = context.secrets;
   const updateContext = (isLoggedIn) => {
-    vscode4.commands.executeCommand("setContext", "localjudge:isLoggedIn", isLoggedIn);
+    vscode5.commands.executeCommand("setContext", "localjudge:isLoggedIn", isLoggedIn);
   };
   updateContext(false);
   secretStorage.get("leetcode-session").then(async (sessionCookie) => {
@@ -4271,15 +4630,19 @@ function activate(context) {
         await leetCodeService.initialize(sessionCookie);
         updateContext(true);
         userProfileProvider.refresh();
+        treeDataProvider.refresh();
         console.log("Auto-login successful");
       } catch (e) {
         console.error("Auto-login failed", e);
-        vscode4.window.showWarningMessage("LocalJudge: Auto-login failed. Please sign in again.");
+        vscode5.window.showWarningMessage("LocalJudge: Auto-login failed. Please sign in again.");
+        treeDataProvider.refresh();
       }
+    } else {
+      treeDataProvider.refresh();
     }
   });
-  const signInDisposable = vscode4.commands.registerCommand("localjudge.signIn", async () => {
-    const selection = await vscode4.window.showQuickPick(
+  const signInDisposable = vscode5.commands.registerCommand("localjudge.signIn", async () => {
+    const selection = await vscode5.window.showQuickPick(
       [
         { label: "I have my cookie", description: "Paste LEETCODE_SESSION cookie directly" },
         { label: "Open LeetCode to get cookie", description: "Open browser to login and copy cookie" }
@@ -4290,18 +4653,18 @@ function activate(context) {
       return;
     }
     if (selection.label === "Open LeetCode to get cookie") {
-      const action = await vscode4.window.showInformationMessage(
+      const action = await vscode5.window.showInformationMessage(
         '1. Log in to LeetCode in your browser.\n2. Open Developer Tools (F12) -> Application -> Cookies.\n3. Copy the value of "LEETCODE_SESSION".',
         { modal: true },
         "Open Browser"
       );
       if (action === "Open Browser") {
-        await vscode4.env.openExternal(vscode4.Uri.parse("https://leetcode.com/accounts/login/"));
+        await vscode5.env.openExternal(vscode5.Uri.parse("https://leetcode.com/accounts/login/"));
       } else {
         return;
       }
     }
-    const cookie = await vscode4.window.showInputBox({
+    const cookie = await vscode5.window.showInputBox({
       prompt: "Enter your LeetCode Session Cookie (LEETCODE_SESSION)",
       password: true,
       ignoreFocusOut: true,
@@ -4313,27 +4676,29 @@ function activate(context) {
         await secretStorage.store("leetcode-session", cookie);
         updateContext(true);
         userProfileProvider.refresh();
-        vscode4.window.showInformationMessage("Successfully signed in to LeetCode!");
+        vscode5.window.showInformationMessage("Successfully signed in to LeetCode!");
         treeDataProvider.refresh();
       } catch (error) {
-        vscode4.window.showErrorMessage(`Sign in failed: ${error}`);
+        vscode5.window.showErrorMessage(`Sign in failed: ${error}`);
       }
     }
   });
-  const signOutDisposable = vscode4.commands.registerCommand("localjudge.signOut", async () => {
+  const signOutDisposable = vscode5.commands.registerCommand("localjudge.signOut", async () => {
     try {
       leetCodeService.logout();
       await secretStorage.delete("leetcode-session");
       updateContext(false);
       userProfileProvider.refresh();
-      vscode4.window.showInformationMessage("Signed out from LeetCode.");
+      vscode5.window.showInformationMessage("Signed out from LeetCode.");
       treeDataProvider.refresh();
     } catch (error) {
-      vscode4.window.showErrorMessage(`Sign out failed: ${error}`);
+      vscode5.window.showErrorMessage(`Sign out failed: ${error}`);
     }
   });
   context.subscriptions.push(signInDisposable, signOutDisposable);
-  const showProblemDisposable = vscode4.commands.registerCommand("localjudge.showProblem", async (problem) => {
+  let currentPanel = void 0;
+  let currentPanelListener = void 0;
+  const showProblemDisposable = vscode5.commands.registerCommand("localjudge.showProblem", async (problem) => {
     if (problem) {
       const p = problem.problem || problem;
       let slug = p.titleSlug || p.title_slug;
@@ -4343,53 +4708,66 @@ function activate(context) {
       slug = slug || "unknown";
       try {
         const details = await leetCodeService.getProblem(slug);
-        const panel = vscode4.window.createWebviewPanel(
-          "localjudgeProblem",
-          `${details.title}: Preview`,
-          vscode4.ViewColumn.One,
-          {
-            enableScripts: true,
-            localResourceRoots: [context.extensionUri]
-          }
-        );
-        panel.webview.html = getHtmlForWebview(panel.webview, details);
-        panel.webview.onDidReceiveMessage(
+        if (currentPanel) {
+          currentPanel.reveal();
+          currentPanel.title = `${details.title}: Preview`;
+        } else {
+          currentPanel = vscode5.window.createWebviewPanel(
+            "localjudgeProblem",
+            `${details.title}: Preview`,
+            vscode5.ViewColumn.One,
+            {
+              enableScripts: true,
+              localResourceRoots: [context.extensionUri]
+            }
+          );
+          currentPanel.onDidDispose(() => {
+            currentPanel = void 0;
+            if (currentPanelListener) {
+              currentPanelListener.dispose();
+              currentPanelListener = void 0;
+            }
+          }, null, context.subscriptions);
+        }
+        currentPanel.webview.html = getHtmlForWebview(currentPanel.webview, details);
+        if (currentPanelListener) {
+          currentPanelListener.dispose();
+        }
+        currentPanelListener = currentPanel.webview.onDidReceiveMessage(
           (message) => {
             switch (message.type) {
               case "codeNow":
-                vscode4.commands.executeCommand("localjudge.codeNow", details);
+                vscode5.commands.executeCommand("localjudge.codeNow", details);
                 return;
               case "openProblem":
-                vscode4.commands.executeCommand("localjudge.showProblem", { titleSlug: message.slug });
+                vscode5.commands.executeCommand("localjudge.showProblem", { titleSlug: message.slug });
                 return;
             }
-          },
-          void 0,
-          context.subscriptions
+          }
         );
       } catch (error) {
-        vscode4.window.showErrorMessage(`Failed to load problem '${slug}': ${error}`);
+        vscode5.window.showErrorMessage(`Failed to load problem '${slug}': ${error}`);
       }
     }
   });
-  const openGitHubDisposable = vscode4.commands.registerCommand("localjudge.openGitHub", () => {
-    vscode4.env.openExternal(vscode4.Uri.parse("https://github.com/srimanikantaBattu"));
+  const openGitHubDisposable = vscode5.commands.registerCommand("localjudge.openGitHub", () => {
+    vscode5.env.openExternal(vscode5.Uri.parse("https://github.com/srimanikantaBattu"));
   });
-  const refreshProblemsDisposable = vscode4.commands.registerCommand("localjudge.refreshProblems", () => {
+  const refreshProblemsDisposable = vscode5.commands.registerCommand("localjudge.refreshProblems", () => {
     treeDataProvider.refresh();
   });
-  const dailyChallengeDisposable = vscode4.commands.registerCommand("localjudge.getDailyChallenge", async () => {
+  const dailyChallengeDisposable = vscode5.commands.registerCommand("localjudge.getDailyChallenge", async () => {
     try {
-      vscode4.window.showInformationMessage("Fetching daily challenge...");
+      vscode5.window.showInformationMessage("Fetching daily challenge...");
       const daily = await leetCodeService.getDailyChallenge();
       const question = daily.question;
-      await vscode4.commands.executeCommand("localjudge.showProblem", question);
+      await vscode5.commands.executeCommand("localjudge.showProblem", question);
     } catch (error) {
-      vscode4.window.showErrorMessage(`Failed to get daily challenge: ${error}`);
+      vscode5.window.showErrorMessage(`Failed to get daily challenge: ${error}`);
     }
   });
-  const searchProblemDisposable = vscode4.commands.registerCommand("localjudge.searchProblem", async () => {
-    const query = await vscode4.window.showInputBox({
+  const searchProblemDisposable = vscode5.commands.registerCommand("localjudge.searchProblem", async () => {
+    const query = await vscode5.window.showInputBox({
       placeHolder: "Search for a LeetCode problem..."
     });
     if (query) {
@@ -4400,24 +4778,24 @@ function activate(context) {
           description: p.difficulty,
           detail: p.titleSlug
         }));
-        const selected = await vscode4.window.showQuickPick(items, {
+        const selected = await vscode5.window.showQuickPick(items, {
           placeHolder: "Select a problem to view"
         });
         if (selected && selected.detail) {
-          await vscode4.commands.executeCommand("localjudge.showProblem", { titleSlug: selected.detail });
+          await vscode5.commands.executeCommand("localjudge.showProblem", { titleSlug: selected.detail });
         }
       } catch (error) {
-        vscode4.window.showErrorMessage(`Failed to search problems: ${error}`);
+        vscode5.window.showErrorMessage(`Failed to search problems: ${error}`);
       }
     }
   });
-  const codeNowDisposable = vscode4.commands.registerCommand("localjudge.codeNow", async (problem) => {
+  const codeNowDisposable = vscode5.commands.registerCommand("localjudge.codeNow", async (problem) => {
     if (!problem) {
-      vscode4.window.showErrorMessage("No problem selected.");
+      vscode5.window.showErrorMessage("No problem selected.");
       return;
     }
     if (!problem.codeSnippets || problem.codeSnippets.length === 0) {
-      vscode4.window.showErrorMessage("No code snippets available for this problem.");
+      vscode5.window.showErrorMessage("No code snippets available for this problem.");
       return;
     }
     const items = problem.codeSnippets.map((snippet) => ({
@@ -4425,7 +4803,7 @@ function activate(context) {
       description: snippet.langSlug,
       detail: snippet.code
     }));
-    const selectedLanguage = await vscode4.window.showQuickPick(items, {
+    const selectedLanguage = await vscode5.window.showQuickPick(items, {
       placeHolder: "Select a language to solve the problem"
     });
     if (selectedLanguage) {
@@ -4477,22 +4855,115 @@ ${commentStyle} Sample Test Case:
         });
       }
       const fileName = `${safeSlug}.${extension}`;
-      let uri;
-      if (vscode4.workspace.workspaceFolders && vscode4.workspace.workspaceFolders.length > 0) {
-        const root = vscode4.workspace.workspaceFolders[0].uri;
-        uri = vscode4.Uri.joinPath(root, fileName).with({ scheme: "untitled" });
+      let fileUri;
+      if (vscode5.workspace.workspaceFolders && vscode5.workspace.workspaceFolders.length > 0) {
+        const root = vscode5.workspace.workspaceFolders[0].uri;
+        fileUri = vscode5.Uri.joinPath(root, fileName);
       } else {
         const homeDir = os.homedir();
         const filePath = path.join(homeDir, fileName);
-        uri = vscode4.Uri.file(filePath).with({ scheme: "untitled" });
+        fileUri = vscode5.Uri.file(filePath);
       }
-      const document = await vscode4.workspace.openTextDocument(uri);
-      const edit = new vscode4.WorkspaceEdit();
-      edit.insert(uri, new vscode4.Position(0, 0), content);
-      await vscode4.workspace.applyEdit(edit);
-      await vscode4.window.showTextDocument(document, vscode4.ViewColumn.One);
+      try {
+        await vscode5.workspace.fs.stat(fileUri);
+        const document = await vscode5.workspace.openTextDocument(fileUri);
+        await vscode5.window.showTextDocument(document, vscode5.ViewColumn.One);
+      } catch {
+        const untitledUri = fileUri.with({ scheme: "untitled" });
+        const document = await vscode5.workspace.openTextDocument(untitledUri);
+        if (document.getText().trim() === "") {
+          const edit = new vscode5.WorkspaceEdit();
+          edit.insert(untitledUri, new vscode5.Position(0, 0), content);
+          await vscode5.workspace.applyEdit(edit);
+        }
+        await vscode5.window.showTextDocument(document, vscode5.ViewColumn.One);
+      }
+      if (currentPanel) {
+        currentPanel.reveal(vscode5.ViewColumn.Two);
+      }
     }
   });
+  const testDisposable = vscode5.commands.registerCommand("localjudge.test", async (slug, uri) => {
+    const document = await vscode5.workspace.openTextDocument(uri);
+    const code = document.getText();
+    const langId = document.languageId;
+    const langMap = {
+      "cpp": "cpp",
+      "java": "java",
+      "python": "python3",
+      "c": "c",
+      "csharp": "csharp",
+      "javascript": "javascript",
+      "typescript": "typescript",
+      "go": "golang",
+      "rust": "rust",
+      "kotlin": "kotlin",
+      "scala": "scala",
+      "ruby": "ruby",
+      "swift": "swift",
+      "php": "php"
+    };
+    const lang = langMap[langId] || langId;
+    const choice = await vscode5.window.showQuickPick(
+      [
+        { label: "Default test cases", description: "Test with the default cases" },
+        { label: "Write directly...", description: "Write test cases in input box" },
+        { label: "Browse...", description: "Test with the written cases in file" }
+      ],
+      { placeHolder: "Select test cases" }
+    );
+    if (!choice) {
+      return;
+    }
+    let input = "";
+    let problem;
+    try {
+      problem = await leetCodeService.getProblem(slug);
+    } catch (e) {
+      vscode5.window.showErrorMessage(`Failed to fetch problem details: ${e}`);
+      return;
+    }
+    if (choice.label === "Default test cases") {
+      input = problem.sampleTestCase;
+    } else if (choice.label === "Write directly...") {
+      input = await vscode5.window.showInputBox({
+        placeHolder: "Enter test cases (one per line or as required)",
+        value: problem.sampleTestCase
+      }) || "";
+    } else {
+      const files = await vscode5.window.showOpenDialog({ canSelectFiles: true });
+      if (files && files.length > 0) {
+        const content = await vscode5.workspace.fs.readFile(files[0]);
+        input = content.toString();
+      }
+    }
+    if (!input) {
+      return;
+    }
+    vscode5.window.withProgress({
+      location: vscode5.ProgressLocation.Notification,
+      title: "Running Test Cases...",
+      cancellable: false
+    }, async (progress) => {
+      try {
+        const result = await leetCodeService.runTest(slug, code, lang, input, problem.questionId);
+        const panel = vscode5.window.createWebviewPanel(
+          "localjudgeTestResult",
+          `Test Results: ${problem.title}`,
+          vscode5.ViewColumn.Two,
+          { enableScripts: true }
+        );
+        panel.webview.html = getTestResultHtml(result, input);
+      } catch (error) {
+        vscode5.window.showErrorMessage(`Test failed: ${error}`);
+      }
+    });
+  });
+  context.subscriptions.push(testDisposable);
+  const submitDisposable = vscode5.commands.registerCommand("localjudge.submit", async (slug, uri) => {
+    vscode5.window.showInformationMessage("Submit feature coming soon!");
+  });
+  context.subscriptions.push(submitDisposable);
   context.subscriptions.push(disposable);
   context.subscriptions.push(dailyChallengeDisposable);
   context.subscriptions.push(searchProblemDisposable);

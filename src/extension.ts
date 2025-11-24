@@ -8,7 +8,8 @@ import { LeetCodeTreeDataProvider } from './providers/leetCodeTreeProvider';
 import { UserProfileProvider } from './providers/userProfileProvider';
 import { WelcomeProvider } from './providers/welcomeProvider';
 import { LeetCodeDecorationProvider } from './providers/decorationProvider';
-import { getHtmlForWebview } from './utils/webviewUtils';
+import { LeetCodeCodeLensProvider } from './providers/codeLensProvider';
+import { getHtmlForWebview, getTestResultHtml } from './utils/webviewUtils';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -32,13 +33,16 @@ export function activate(context: vscode.ExtensionContext) {
 	const treeDataProvider = new LeetCodeTreeDataProvider(leetCodeService);
     const decorationProvider = new LeetCodeDecorationProvider();
     const welcomeProvider = new WelcomeProvider();
+    const codeLensProvider = new LeetCodeCodeLensProvider();
 
     // Register providers immediately
 	context.subscriptions.push(
 		vscode.window.registerTreeDataProvider('localjudge.problems', treeDataProvider),
         vscode.window.registerTreeDataProvider('localjudge.profile', userProfileProvider),
         vscode.window.registerTreeDataProvider('localjudge.welcome', welcomeProvider),
-        vscode.window.registerFileDecorationProvider(decorationProvider)
+        vscode.window.registerFileDecorationProvider(decorationProvider),
+        vscode.languages.registerCodeLensProvider({ scheme: 'file' }, codeLensProvider),
+        vscode.languages.registerCodeLensProvider({ scheme: 'untitled' }, codeLensProvider)
 	);
 
 	// Initialize authentication
@@ -54,12 +58,16 @@ export function activate(context: vscode.ExtensionContext) {
 				await leetCodeService.initialize(sessionCookie);
                 updateContext(true);
                 userProfileProvider.refresh();
+                treeDataProvider.refresh();
 				console.log('Auto-login successful');
 			} catch (e) {
 				console.error('Auto-login failed', e);
 				vscode.window.showWarningMessage('LocalJudge: Auto-login failed. Please sign in again.');
+                treeDataProvider.refresh(); // Load anonymous if login fails
 			}
-		}
+		} else {
+            treeDataProvider.refresh(); // Load anonymous if no cookie
+        }
 	});
 
 	const signInDisposable = vscode.commands.registerCommand('localjudge.signIn', async () => {
@@ -128,6 +136,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(signInDisposable, signOutDisposable);
 
+	// Track the current webview panel
+    let currentPanel: vscode.WebviewPanel | undefined = undefined;
+    let currentPanelListener: vscode.Disposable | undefined = undefined;
+
 	const showProblemDisposable = vscode.commands.registerCommand('localjudge.showProblem', async (problem: any) => {
 		// This command can be triggered from tree view or other places
 		if (problem) {
@@ -144,21 +156,38 @@ export function activate(context: vscode.ExtensionContext) {
 			try {
 				const details = await leetCodeService.getProblem(slug);
 				
-				// Create and show a new webview panel
-				const panel = vscode.window.createWebviewPanel(
-					'localjudgeProblem',
-					`${details.title}: Preview`,
-					vscode.ViewColumn.One,
-					{
-						enableScripts: true,
-						localResourceRoots: [context.extensionUri]
-					}
-				);
+				// Create or reuse webview panel
+                if (currentPanel) {
+                    currentPanel.reveal();
+                    currentPanel.title = `${details.title}: Preview`;
+                } else {
+                    currentPanel = vscode.window.createWebviewPanel(
+                        'localjudgeProblem',
+                        `${details.title}: Preview`,
+                        vscode.ViewColumn.One,
+                        {
+                            enableScripts: true,
+                            localResourceRoots: [context.extensionUri]
+                        }
+                    );
+                    currentPanel.onDidDispose(() => {
+                        currentPanel = undefined;
+                        if (currentPanelListener) {
+                            currentPanelListener.dispose();
+                            currentPanelListener = undefined;
+                        }
+                    }, null, context.subscriptions);
+                }
 
-				panel.webview.html = getHtmlForWebview(panel.webview, details);
+				currentPanel.webview.html = getHtmlForWebview(currentPanel.webview, details);
+
+                // Dispose previous listener to avoid duplicate/stale handlers
+                if (currentPanelListener) {
+                    currentPanelListener.dispose();
+                }
 
 				// Handle messages from the webview
-				panel.webview.onDidReceiveMessage(
+				currentPanelListener = currentPanel.webview.onDidReceiveMessage(
 					message => {
 						switch (message.type) {
 							case 'codeNow':
@@ -168,9 +197,7 @@ export function activate(context: vscode.ExtensionContext) {
 								vscode.commands.executeCommand('localjudge.showProblem', { titleSlug: message.slug });
 								return;
 						}
-					},
-					undefined,
-					context.subscriptions
+					}
 				);
 
 			} catch (error) {
@@ -301,26 +328,137 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
 			const fileName = `${safeSlug}.${extension}`;
-			let uri: vscode.Uri;
+			let fileUri: vscode.Uri;
 			
 			if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
 				const root = vscode.workspace.workspaceFolders[0].uri;
-				uri = vscode.Uri.joinPath(root, fileName).with({ scheme: 'untitled' });
+				fileUri = vscode.Uri.joinPath(root, fileName);
 			} else {
 				// Fallback to user's home directory to avoid permission issues with root drive
 				const homeDir = os.homedir();
 				const filePath = path.join(homeDir, fileName);
-				uri = vscode.Uri.file(filePath).with({ scheme: 'untitled' });
+				fileUri = vscode.Uri.file(filePath);
 			}
 
-			const document = await vscode.workspace.openTextDocument(uri);
-			const edit = new vscode.WorkspaceEdit();
-			edit.insert(uri, new vscode.Position(0, 0), content);
-			await vscode.workspace.applyEdit(edit);
-			
-			await vscode.window.showTextDocument(document, vscode.ViewColumn.One);
+            // Check if file exists on disk
+            try {
+                await vscode.workspace.fs.stat(fileUri);
+                // File exists, open it
+                const document = await vscode.workspace.openTextDocument(fileUri);
+                await vscode.window.showTextDocument(document, vscode.ViewColumn.One);
+            } catch {
+                // File does not exist, try to open/create untitled
+                const untitledUri = fileUri.with({ scheme: 'untitled' });
+                const document = await vscode.workspace.openTextDocument(untitledUri);
+                
+                // Only insert content if the document is empty (newly created)
+                if (document.getText().trim() === '') {
+                    const edit = new vscode.WorkspaceEdit();
+                    edit.insert(untitledUri, new vscode.Position(0, 0), content);
+                    await vscode.workspace.applyEdit(edit);
+                }
+                
+                await vscode.window.showTextDocument(document, vscode.ViewColumn.One);
+            }
+
+            // Move the webview to the second column if it exists
+            if (currentPanel) {
+                currentPanel.reveal(vscode.ViewColumn.Two);
+            }
 		}
 	});
+
+	const testDisposable = vscode.commands.registerCommand('localjudge.test', async (slug: string, uri: vscode.Uri) => {
+		const document = await vscode.workspace.openTextDocument(uri);
+		const code = document.getText();
+		
+		// Determine language from file extension or languageId
+		const langId = document.languageId;
+		// Map vscode languageId to LeetCode lang
+		const langMap: {[key: string]: string} = {
+			'cpp': 'cpp',
+			'java': 'java',
+			'python': 'python3',
+			'c': 'c',
+			'csharp': 'csharp',
+			'javascript': 'javascript',
+			'typescript': 'typescript',
+			'go': 'golang',
+			'rust': 'rust',
+			'kotlin': 'kotlin',
+			'scala': 'scala',
+			'ruby': 'ruby',
+			'swift': 'swift',
+			'php': 'php'
+		};
+		const lang = langMap[langId] || langId;
+
+		const choice = await vscode.window.showQuickPick(
+			[
+				{ label: 'Default test cases', description: 'Test with the default cases' },
+				{ label: 'Write directly...', description: 'Write test cases in input box' },
+				{ label: 'Browse...', description: 'Test with the written cases in file' }
+			],
+			{ placeHolder: 'Select test cases' }
+		);
+
+		if (!choice) { return; }
+
+		let input = '';
+        let problem: any;
+        try {
+		    problem = await leetCodeService.getProblem(slug);
+        } catch (e) {
+            vscode.window.showErrorMessage(`Failed to fetch problem details: ${e}`);
+            return;
+        }
+
+		if (choice.label === 'Default test cases') {
+			input = problem.sampleTestCase;
+		} else if (choice.label === 'Write directly...') {
+			input = await vscode.window.showInputBox({
+				placeHolder: 'Enter test cases (one per line or as required)',
+				value: problem.sampleTestCase
+			}) || '';
+		} else {
+			const files = await vscode.window.showOpenDialog({ canSelectFiles: true });
+			if (files && files.length > 0) {
+				const content = await vscode.workspace.fs.readFile(files[0]);
+				input = content.toString();
+			}
+		}
+
+		if (!input) { return; }
+
+		vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: "Running Test Cases...",
+			cancellable: false
+		}, async (progress) => {
+			try {
+				const result = await leetCodeService.runTest(slug, code, lang, input, problem.questionId);
+				
+				// Show results
+				const panel = vscode.window.createWebviewPanel(
+					'localjudgeTestResult',
+					`Test Results: ${problem.title}`,
+					vscode.ViewColumn.Two,
+					{ enableScripts: true }
+				);
+				
+				panel.webview.html = getTestResultHtml(result, input);
+				
+			} catch (error) {
+				vscode.window.showErrorMessage(`Test failed: ${error}`);
+			}
+		});
+	});
+    context.subscriptions.push(testDisposable);
+
+	const submitDisposable = vscode.commands.registerCommand('localjudge.submit', async (slug: string, uri: vscode.Uri) => {
+        vscode.window.showInformationMessage('Submit feature coming soon!');
+    });
+    context.subscriptions.push(submitDisposable);
 
 	context.subscriptions.push(disposable);
 	context.subscriptions.push(dailyChallengeDisposable);

@@ -163,3 +163,116 @@ export function getHtmlForWebview(webview: vscode.Webview, problem?: Problem): s
     </body>
     </html>`;
 }
+
+export function getTestResultHtml(result: any, input: string): string {
+    // Try to split inputs if possible, but LeetCode inputs can be multi-line.
+    // A simple heuristic is to split by newline if the number of lines matches the number of test cases.
+    // Otherwise, we might just show the whole input block or try to parse it if it's JSON.
+    // For now, let's just pass the whole input string and let the user figure it out, 
+    // or try to split by newline which is common for simple inputs.
+    
+    const testCases = result.code_answer || [];
+    const expected = result.expected_code_answer || [];
+    const stdOutput = result.std_output || [];
+    
+    // Attempt to split input
+    let inputs = input.split('\n').filter(line => line.trim() !== '');
+    // If input count doesn't match test case count, maybe it's one line per param?
+    // LeetCode often has multiple lines per test case.
+    // We'll just show "Input" as generic if we can't match perfectly.
+    
+    let tabsHtml = '';
+    let contentHtml = '';
+    
+    if (result.run_success) {
+        testCases.forEach((output: string, index: number) => {
+            const isCorrect = output === expected[index];
+            const statusColor = isCorrect ? '#00B8A3' : '#FF375F';
+            const statusIcon = isCorrect ? '✓' : '✗';
+            
+            tabsHtml += `<button class="tab-button ${index === 0 ? 'active' : ''}" onclick="openTab(event, 'case${index}')">Case ${index + 1} <span style="color: ${statusColor}">${statusIcon}</span></button>`;
+            
+            contentHtml += `
+            <div id="case${index}" class="tab-content" style="display: ${index === 0 ? 'block' : 'none'}">
+                <div class="result-item">
+                    <span class="label">Input:</span>
+                    <pre>${inputs[index] || input}</pre>
+                </div>
+                <div class="result-item">
+                    <span class="label">Output:</span>
+                    <pre>${output}</pre>
+                </div>
+                <div class="result-item">
+                    <span class="label">Expected:</span>
+                    <pre>${expected[index]}</pre>
+                </div>
+                ${stdOutput[index] ? `
+                <div class="result-item">
+                    <span class="label">Stdout:</span>
+                    <pre>${stdOutput[index]}</pre>
+                </div>` : ''}
+            </div>`;
+        });
+    } else {
+        // Compile error or runtime error
+        contentHtml = `
+        <div class="error-container">
+            <h3>${result.status_msg}</h3>
+            <pre>${result.full_compile_error || result.full_runtime_error || result.compile_error || result.runtime_error || 'Unknown error'}</pre>
+        </div>`;
+    }
+
+    return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Test Results</title>
+        <style>
+            body { font-family: var(--vscode-font-family); color: var(--vscode-editor-foreground); padding: 20px; }
+            .tab-container { display: flex; border-bottom: 1px solid var(--vscode-panel-border); margin-bottom: 20px; }
+            .tab-button {
+                background: none;
+                border: none;
+                padding: 10px 20px;
+                cursor: pointer;
+                color: var(--vscode-foreground);
+                border-bottom: 2px solid transparent;
+                font-size: 1em;
+            }
+            .tab-button.active {
+                border-bottom-color: var(--vscode-panelTitle-activeBorder);
+                color: var(--vscode-panelTitle-activeForeground);
+            }
+            .tab-button:hover {
+                color: var(--vscode-panelTitle-activeForeground);
+            }
+            .result-item { margin-bottom: 20px; }
+            .label { font-weight: bold; display: block; margin-bottom: 5px; color: var(--vscode-descriptionForeground); }
+            pre { background-color: var(--vscode-textBlockQuote-background); padding: 10px; border-radius: 5px; overflow-x: auto; }
+            .error-container { color: var(--vscode-errorForeground); }
+        </style>
+    </head>
+    <body>
+        <h2>${result.status_msg}</h2>
+        ${result.run_success ? `<div class="tab-container">${tabsHtml}</div>` : ''}
+        ${contentHtml}
+        
+        <script>
+            function openTab(evt, caseName) {
+                var i, tabcontent, tablinks;
+                tabcontent = document.getElementsByClassName("tab-content");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
+                }
+                tablinks = document.getElementsByClassName("tab-button");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(" active", "");
+                }
+                document.getElementById(caseName).style.display = "block";
+                evt.currentTarget.className += " active";
+            }
+        </script>
+    </body>
+    </html>`;
+}

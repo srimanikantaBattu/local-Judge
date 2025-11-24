@@ -108,12 +108,14 @@ import { LeetCode, Credential, UserProfile, Whoami } from 'leetcode-query';
 export class LeetCodeService {
     private leetcode: LeetCode;
     private credential?: Credential;
+    private sessionCookie: string = '';
 
     constructor() {
         this.leetcode = new LeetCode();
     }
 
     async initialize(sessionCookie: string): Promise<void> {
+        this.sessionCookie = sessionCookie;
         try {
             // Clear any existing cache to ensure we fetch fresh data with user status
             if (this.leetcode && this.leetcode.cache) {
@@ -189,5 +191,192 @@ export class LeetCodeService {
             console.error('Error fetching problem:', error);
             throw error;
         }
+    }
+
+    private async getCsrfToken(): Promise<string | undefined> {
+        // 1. Try from credential
+        if ((this.credential as any).csrfToken) { return (this.credential as any).csrfToken; }
+
+        // 2. Try from session cookie string
+        const match = this.sessionCookie.match(/csrftoken=([^;]+)/);
+        if (match) { return match[1]; }
+
+        // 3. Fetch from LeetCode
+        try {
+            let cookieHeader = this.sessionCookie;
+            if (!cookieHeader.includes('LEETCODE_SESSION=')) {
+                cookieHeader = `LEETCODE_SESSION=${this.sessionCookie}`;
+            }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Cookie': cookieHeader,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            };
+
+            // Try GraphQL first
+            let response = await fetch('https://leetcode.com/graphql', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ query: '{ user { username } }' })
+            });
+
+            let setCookie = response.headers.get('set-cookie');
+            if (setCookie) {
+                const tokenMatch = setCookie.match(/csrftoken=([^;]+)/);
+                if (tokenMatch) { return tokenMatch[1]; }
+            }
+
+            // Fallback to main page
+            response = await fetch('https://leetcode.com/', {
+                method: 'GET',
+                headers
+            });
+            setCookie = response.headers.get('set-cookie');
+            if (setCookie) {
+                const tokenMatch = setCookie.match(/csrftoken=([^;]+)/);
+                if (tokenMatch) { return tokenMatch[1]; }
+            }
+        } catch (e) {
+            console.error('Failed to fetch CSRF token', e);
+        }
+        return undefined;
+    }
+
+    async runTest(slug: string, code: string, lang: string, input: string, questionId: string): Promise<any> {
+        if (!this.credential) {
+            throw new Error('Not signed in');
+        }
+
+        // Ensure we have a CSRF token
+        const csrfToken = await this.getCsrfToken();
+        
+        if (!csrfToken) {
+            throw new Error('CSRF Token not found. Please ensure you pasted the full cookie string including csrftoken.');
+        }
+
+        // Construct the cookie header. 
+        // If sessionCookie doesn't have 'LEETCODE_SESSION=', assume it's just the value.
+        let cookieHeader = this.sessionCookie;
+        if (!cookieHeader.includes('LEETCODE_SESSION=')) {
+            cookieHeader = `LEETCODE_SESSION=${this.sessionCookie}`;
+        }
+        // Append csrf token if not present
+        if (!cookieHeader.includes('csrftoken=')) {
+            cookieHeader += `; csrftoken=${csrfToken}`;
+        }
+
+        const headers: any = {
+            'Content-Type': 'application/json',
+            'Referer': `https://leetcode.com/problems/${slug}/`,
+            'Origin': 'https://leetcode.com',
+            'Cookie': cookieHeader,
+            'x-csrftoken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        };
+
+        const body = JSON.stringify({
+            lang: lang,
+            question_id: questionId,
+            typed_code: code,
+            data_input: input
+        });
+
+        try {
+            const response = await fetch(`https://leetcode.com/problems/${slug}/interpret_solution/`, {
+                method: 'POST',
+                headers: headers,
+                body: body,
+                redirect: 'manual'
+            });
+
+            if (response.type === 'opaqueredirect' || response.status === 302 || response.status === 301) {
+                throw new Error('Session expired or invalid. Please sign in again.');
+            }
+
+            if (!response.ok) {
+                const text = await response.text();
+                if (response.status === 403) {
+                    throw new Error('Access Denied (403). CSRF token mismatch or Cloudflare block.');
+                }
+                throw new Error(`Request failed with status ${response.status}: ${text.substring(0, 200)}...`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                if (text.includes('Just a moment...')) {
+                    throw new Error('Blocked by Cloudflare. Please try again later or update your cookie.');
+                }
+                throw new Error(`Expected JSON response but got ${contentType}. Response start: ${text.substring(0, 100)}...`);
+            }
+
+            const text = await response.text();
+            let data: any;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error(`Invalid JSON response: ${text.substring(0, 200)}...`);
+            }
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            const interpretId = data.interpret_id;
+            if (!interpretId) {
+                throw new Error(`Failed to start test run: ${JSON.stringify(data)}`);
+            }
+
+            // Poll for results
+            return await this.pollSubmission(interpretId, csrfToken);
+
+        } catch (error) {
+            console.error('Test run failed:', error);
+            throw error;
+        }
+    }
+
+    private async pollSubmission(id: string, csrfToken: string): Promise<any> {
+        let attempts = 0;
+        
+        while (attempts < 20) { // 40 seconds timeout
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const response = await fetch(`https://leetcode.com/submissions/detail/${id}/check/`, {
+                headers: {
+                    'Cookie': this.sessionCookie,
+                    'x-csrftoken': csrfToken,
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Referer': `https://leetcode.com/submissions/detail/${id}/check/`
+                }
+            });
+            
+            if (!response.ok) {
+                // If polling fails, we might want to retry or abort
+                console.warn(`Polling failed with status ${response.status}`);
+                attempts++;
+                continue;
+            }
+
+            const text = await response.text();
+            let data: any;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                // Ignore invalid JSON during polling, might be temporary glitch
+                attempts++;
+                continue;
+            }
+
+            if (data.state === 'SUCCESS') {
+                return data;
+            }
+            // Handle other states if necessary
+            
+            attempts++;
+        }
+        throw new Error('Test run timed out');
     }
 }

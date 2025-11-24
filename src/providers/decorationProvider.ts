@@ -10,12 +10,12 @@ export class LeetCodeDecorationProvider implements vscode.FileDecorationProvider
             const difficulty = params.get('difficulty');
             const status = params.get('status');
 
-            if (status === 'ac') {
+            if (status && status.toLowerCase() === 'ac') {
                 return {
                     badge: '✔',
                     tooltip: 'Accepted'
                 };
-            } else if (status === 'notac') {
+            } else if (status && status.toLowerCase() === 'notac') {
                 return {
                     badge: '?',
                     tooltip: 'Attempted'

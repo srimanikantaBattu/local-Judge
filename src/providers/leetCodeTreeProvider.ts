@@ -11,7 +11,7 @@ export class LeetCodeTreeDataProvider implements vscode.TreeDataProvider<LeetCod
     private allProblems: QuestionSummary[] = [];
 
     constructor(private leetCodeService: LeetCodeService) {
-        this.refresh();
+        // Initial refresh is handled by the extension activation to ensure correct auth state
     }
 
     refresh(): void {
