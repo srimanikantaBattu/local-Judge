@@ -1,69 +1,72 @@
-# localjudge
+# LocalJudge
 
-This is the README for your extension "localjudge". After writing up a brief description, we recommend including the following sections.
+LocalJudge is a VS Code extension that brings LeetCode problem solving directly into your editor. Code, test, and debug locally with your favorite tools while seamlessly connecting to LeetCode's platform.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Browse Problems**: Access all LeetCode problems organized by difficulty, tags, or as a complete list
+- **Daily Challenge**: Quickly open today's daily coding challenge
+- **User Profile**: View your stats, ranking, and progress directly in the sidebar
+- **Code Generation**: Generate starter code templates in multiple languages
+- **Test Cases**: Run and validate your solutions with default or custom test cases
+- **Split View**: Code editor and problem preview side-by-side
+- **Status Tracking**: Visual indicators show which problems you've solved
 
-For example if there is an image subfolder under your extension project workspace:
+## Getting Started
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+1. **Sign In**: Click the Sign In button in the WELCOME view
+2. **Cookie Setup**: 
+   - Log in to LeetCode in your browser
+   - Open DevTools (F12) → Application → Cookies
+   - Copy the value of `LEETCODE_SESSION` (and optionally `csrftoken`)
+   - Paste into VS Code when prompted
+3. **Start Coding**: Browse problems, click "Code Now", and begin solving!
+
+## Usage
+
+### Viewing Problems
+- Navigate through the **PROBLEMS** view in the sidebar
+- Filter by difficulty (Easy/Medium/Hard) or topic tags
+- Click any problem to see its full description
+
+### Solving Problems
+1. Click **"Code Now"** from the problem preview
+2. Select your preferred programming language
+3. The starter code will open in a new tab
+4. Write your solution
+
+### Testing Solutions
+1. Look for the **Test | Submit** buttons at the top of your solution file
+2. Click **Test** to run against:
+   - Default test cases
+   - Custom input you provide
+   - Test cases from a file
+3. View detailed results in a split panel
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+- VS Code 1.106.1 or higher
+- Active internet connection
+- Valid LeetCode account
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- Testing feature requires a valid `csrftoken` in your cookie string for proper authentication
+- Cloudflare protection may occasionally block automated requests
+- Some language configurations may require manual adjustments
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.0.1
 
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+Initial release of LocalJudge:
+- LeetCode authentication via session cookies
+- Problem browsing and filtering
+- User profile display
+- Code generation for multiple languages
+- Test case execution
+- Split-view problem preview
 
 ---
 
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+**Enjoy coding with LocalJudge!**
